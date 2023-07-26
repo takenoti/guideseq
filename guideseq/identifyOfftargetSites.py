@@ -17,7 +17,8 @@ import re
 import regex
 import logging
 from Levenshtein import distance
-
+import pandas as pd
+import dill
 logger = logging.getLogger('root')
 
 
@@ -96,6 +97,9 @@ class chromosomePosition():
 										  ]
 										 for chromosome in sorted(self.chromosome_barcode_dict)
 										 for position in sorted(self.chromosome_barcode_dict[chromosome])]
+		self.chr_dataframe_dict={}
+		for c in self.chromosome_barcode_dict:
+			self.chr_dataframe_dict[c]=pd.DataFrame(self.chromosome_barcode_dict[c].keys())
 		return self.barcode_position_summary
 
 	# Summarizes the chromosome, positions within a 10 bp window
@@ -317,6 +321,13 @@ def hamming_distance(s1, s2):
         raise ValueError("Strand lengths are not equal!")
     return sum(ch1 != ch2 for ch1,ch2 in zip(s1,s2))
 
+def is_control(chr,pos,ref_chr,ref_start,ref_end):
+	if chr != ref_chr:
+		return False
+	if ref_start <= pos <= ref_end:
+		return True
+	return False
+
 """
 annotation is in the format:
 """
@@ -325,13 +336,15 @@ def analyze(sam_filename, reference_genome, outfile, annotations, windowsize, ma
 	output_folder = os.path.dirname(outfile)
 	if not os.path.exists(output_folder):
 		os.makedirs(output_folder)
-
+	temp = open(outfile+".primer.tsv", 'w')
+	tl_filter = open(outfile+".tl_filter.tsv", 'w')
 	logger.info("Processing SAM file %s", sam_filename)
 	file = open(sam_filename, 'rU')
 	__, filename_tail = os.path.split(sam_filename)
 	chromosome_position = chromosomePosition(reference_genome)
 	# control_primer_obj = chromosomePosition(reference_genome)
 	control_primer_count = 0
+	control_counts = 0
 	total_dsODN = 0
 	control_primer_count_dict = {} # for debug purposes
 	total_dsODN_count_dict = {} # for debug purposes
@@ -340,9 +353,13 @@ def analyze(sam_filename, reference_genome, outfile, annotations, windowsize, ma
 		if len(fields) >= 10:
 			# These are strings--need to be cast as ints for comparisons.
 			full_read_name, sam_flag, chromosome, position, mapq, cigar, name_of_mate, position_of_mate, template_length, read_sequence, read_quality = fields[:11]
+			if abs(int(template_length)) > 10000:
+				print (full_read_name,read_sequence,sam_flag,chromosome,template_length,sep="\t",file=tl_filter)
+				continue
 			if int(mapq) >= myDict['mapq_threshold'] and int(sam_flag) & 128 and not int(sam_flag) & 2048:
 				# Second read in pair
 				barcode, count = parseReadName(full_read_name)
+				# print (barcode)
 				# print (read_sequence)
 				control_read = contain_control_primer(read_sequence, sam_flag, myDict)
 				# print (control_read)
@@ -354,7 +371,7 @@ def analyze(sam_filename, reference_genome, outfile, annotations, windowsize, ma
 					control_primer_count += 1
 					
 				# todo, check barcode count
-				primer,flag = assignPrimerstoReads(read_sequence, sam_flag,dsODN_dict=myDict)
+				primer,flag,seq,myDistance,distance2 = assignPrimerstoReads(read_sequence, sam_flag,dsODN_dict=myDict)
 				if primer != "nomatch":
 					if flag:
 						total_dsODN += 1
@@ -375,9 +392,12 @@ def analyze(sam_filename, reference_genome, outfile, annotations, windowsize, ma
 					read_position = int(position)
 					strand = "+"
 					chromosome_position.addPositionBarcode(chromosome, read_position, strand, barcode, primer, count)
+				# if primer == "nomatch":
+				print (full_read_name,read_sequence,sam_flag,chromosome,read_position,seq,myDistance,distance2,primer,sep="\t",file=temp)
 
 	# Generate barcode position summary
 	stacked_summary = chromosome_position.SummarizeBarcodePositions() # this stacked summary is not used
+	# print (chromosome_position.chromosome_barcode_dict)
 	if control_primer_count == 0:
 		control_primer_count = -1
 	with open(outfile, 'w') as f:
@@ -392,7 +412,7 @@ def analyze(sam_filename, reference_genome, outfile, annotations, windowsize, ma
 			  'Site_GapsAllowed.Sequence', 'Site_GapsAllowed.Length', 'Site_GapsAllowed.Score',  # 29:31
 			  'Site_GapsAllowed.Substitutions', 'Site_GapsAllowed.Insertions', 'Site_GapsAllowed.Deletions',  # 32:34
 			  'Site_GapsAllowed.Strand', 'Site_GapsAllowed.Start', 'Site_GapsAllowed.End',  # 35:37
-			  'Cell', 'Targetsite', 'TargetSequence', 'RealignedTargetSequence','control_reads','total_dsODN',"normlization_ratio", sep='\t', file=f)  # 38:41
+			  'Cell', 'Targetsite', 'TargetSequence', 'RealignedTargetSequence','control_primer_reads','control_counts',"normlization_ratio",'#pos_500bp','#pos_1kb','#pos_2kb', sep='\t', file=f)  # 38:41
 
 		# Output summary of each window
 		summary = chromosome_position.SummarizeBarcodeIndex(windowsize)
@@ -459,10 +479,42 @@ def analyze(sam_filename, reference_genome, outfile, annotations, windowsize, ma
 				output_dict[output_row_key][11] = str(read_count_total)
 			else:
 				output_dict[output_row_key] = output_row
+				
+				
+					
+		# get control counts:
 		for key in sorted(output_dict.keys()):
-			print(*output_dict[key]+[str(control_primer_count),str(total_dsODN),str(float(output_dict[key][11])/float(control_primer_count))], sep='\t', file=f)
+			current_pos = int(output_dict[key][7])
+			chr = output_dict[key][0]
+			if is_control(chr,current_pos,myDict['control_coord_chr'],myDict['control_coord_start'],myDict['control_coord_end']):
+				control_counts = int(float(output_dict[key][11]))
+				break
+		if control_counts == 0:
+			control_counts = -1
+		for key in sorted(output_dict.keys()):
+			current_pos = int(output_dict[key][7])
+			# print (output_dict[key])
+			# exit()
+			chr = output_dict[key][0]
+			# print (chromosome_position.chr_dataframe_dict[chr])
+			print(*output_dict[key]+[str(control_primer_count),str(control_counts),str(float(output_dict[key][11])/float(control_counts))]+get_num_pos_given_pos(chromosome_position.chr_dataframe_dict[chr],current_pos), sep='\t', file=f)
+	if myDict['save_pickle']:
+		save_object(chromosome_position,outfile+".pkl")
+def get_num_pos_given_pos(df,pos):
+	# return 500, 1000, and 2000
+	out = []
+	for i in [500,1000,2000]:
+		i = int(i/2)
+		out.append(df[0].between(pos-i,pos+i).sum())
+	return out
+def save_object(obj,out):
 
-
+    try:
+        with open(out, "wb") as f:
+            dill.dump(obj, f)
+    except Exception as ex:
+        print("Error during pickling object (Possibly unsupported):", ex)
+ 
 def py2min(myList):
 	out = [i  for i in myList if i != "" ]
 	return min(out)
@@ -476,34 +528,40 @@ def assignPrimerstoReads(read_sequence, sam_flag,dsODN_dict=None):
 	if int(sam_flag) & 16:
 		read_sequence = reverseComplement(read_sequence)
 	# i7-
-	if match_dsODN(read_sequence,dsODN_dict['i7-'],dsODN_dict['i7-_match_distance']):
+	flag,seq1,myDistance1,distance2 = match_dsODN(read_sequence,dsODN_dict['i7-'],dsODN_dict['i7-_match_distance'])
+	if flag:
 		extend_sequence = read_sequence[len(dsODN_dict['i7-']):len(dsODN_dict['dsODN_primer'])][:dsODN_dict['i7-_mispriming_length']]
 		correct_sequence = dsODN_dict['dsODN_primer'][len(dsODN_dict['i7-']):len(dsODN_dict['dsODN_primer'])][:dsODN_dict['i7-_mispriming_length']]
 		# print (extend_sequence,correct_sequence)
 		if distance(extend_sequence,correct_sequence) >= dsODN_dict['i7-_mispriming_distance']:
-			return "primer1",False # misprimining
+			return "primer1",False,seq1,myDistance1,distance2 # misprimining
 		else:
-			return "primer1",True
-	if match_dsODN(read_sequence,dsODN_dict['i7+'],dsODN_dict['i7+_match_distance']):
+			return "primer1",True,seq1,myDistance1,distance2
+	flag,seq2,myDistance2,distance2 = match_dsODN(read_sequence,dsODN_dict['i7+'],dsODN_dict['i7+_match_distance'])
+	if flag:
 		extend_sequence = read_sequence[len(dsODN_dict['i7+']):len(dsODN_dict['dsODN_primer_revcomp'])][:dsODN_dict['i7+_mispriming_length']]
 		correct_sequence = dsODN_dict['dsODN_primer_revcomp'][len(dsODN_dict['i7+']):len(dsODN_dict['dsODN_primer_revcomp'])][:dsODN_dict['i7+_mispriming_length']]
 		# print ("i7+",extend_sequence,correct_sequence)
 		if distance(extend_sequence,correct_sequence) >= dsODN_dict['i7+_mispriming_distance']:
-			return "primer2",False # misprimining
+			return "primer2",False,seq2,myDistance2,distance2 # misprimining
 		else:
-			return "primer2",True
-	return "nomatch",False
+			return "primer2",True,seq2,myDistance2,distance2
+	if myDistance1<myDistance2:
+		return "nomatch",False,seq1,myDistance1,distance2 
+	return "nomatch",False,seq2,myDistance2,distance2
 
 # i7+_mispriming_length: 12
 # i7-_mispriming_length: 5
 
 
 def match_dsODN(read_sequence,primer,cutoff):
-	myDistance = distance(read_sequence[:len(primer)],primer)
+	read_start_sequence = read_sequence[:len(primer)]
+	myDistance = distance(read_start_sequence,primer)
+	distance2 = myDistance-read_start_sequence.count("N")
 	if myDistance <= cutoff:
-		return True
+		return True,read_start_sequence,myDistance,distance2
 	else:
-		return False
+		return False,read_start_sequence,myDistance,distance2
 
 
 
@@ -534,6 +592,9 @@ def loadFileIntoArray(filename):
 
 
 def parseReadName(read_name):
+	# x = read_name.split("_")
+	return read_name,1
+def parseReadName2(read_name):
 	m = re.search(r'([ACGTN]{8}_[ACGTN]{6}_[ACGTN]{6})_([0-9]*)', read_name)
 	if m:
 		molecular_index, count = m.group(1), m.group(2)

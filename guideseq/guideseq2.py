@@ -385,9 +385,7 @@ class GuideSeq:
 					visualizeOfftargets(infile, outfile, title=sample,PAM="NGG",genome=self.parameters['genome'],refseq_names=self.parameters['refseq_names'])
 				# Manhattan plot
 				outfile = os.path.join(self.parameters['analysis_folder'], 'visualization', sample + '.Manhattan.pdf')
-				# command = f"{self.parameters['Rscript']} {self.parameters['Manhattan.R']} {self.parameters['on_target_reference_sequence']} {infile.replace('.txt','.rm_no_match.annot.tsv')} {outfile}"
-				command = f"{self.parameters['Rscript']} {self.parameters['Manhattan.R']} {self.samples[sample]['target']} {infile.replace('.txt','.rm_no_match.annot.tsv')} {outfile}"
-				logger.info(command)
+				command = f"{self.parameters['Rscript']} {self.parameters['Manhattan.R']} {self.parameters['on_target_reference_sequence']} {infile.replace('.txt','.rm_no_match.annot.tsv')} {outfile}"
 				subprocess.call(command,shell=True)
 			except Exception as e:
 				logger.error('Error visualizing off-target sites: %s'%(sample))
@@ -403,9 +401,7 @@ class GuideSeq:
 					visualizeOfftargets(infile, outfile, title=sample,PAM="NGG",genome=self.parameters['genome'],refseq_names=self.parameters['refseq_names'])
 				# Manhattan plot
 				outfile = os.path.join(self.parameters['analysis_folder'], 'visualization', sample + '.Manhattan.pdf')
-				# command = f"{self.parameters['Rscript']} {self.parameters['Manhattan.R']} {self.parameters['on_target_reference_sequence']} {infile.replace('.txt','.rm_no_match.annot.tsv')} {outfile}"
-				command = f"{self.parameters['Rscript']} {self.parameters['Manhattan.R']} {self.samples[sample]['target']} {infile.replace('.txt','.rm_no_match.annot.tsv')} {outfile}"
-				logger.info(command)
+				command = f"{self.parameters['Rscript']} {self.parameters['Manhattan.R']} {self.parameters['on_target_reference_sequence']} {infile.replace('.txt','.rm_no_match.annot.tsv')} {outfile}"
 				subprocess.call(command,shell=True)
 			except Exception as e:
 				logger.error('Error visualizing off-target sites: %s'%(sample))
@@ -441,7 +437,7 @@ def parse_args():
 	parallel_parser = subparsers.add_parser('parallel', help='submit a job for each sample specified in the YAML file. Tested in the LSF system. May not work in other job management systems.')
 	parallel_parser.add_argument('--manifest', '-m', help='Specify the manifest Path', required=True)
 	parallel_parser.add_argument('--sample', '-s', help='Specify sample to process (default is all)', default='all')
-	parallel_parser.add_argument('--lsf', '-l', help='Specify LSF CMD', default='bsub -R rusage[mem=150000] -P GUIDEseqV2 -q standard -o HPC_parallel_log/GUIDEseqV2_{Sample_Name}_%J.log')
+	parallel_parser.add_argument('--lsf', '-l', help='Specify LSF CMD', default='bsub -R rusage[mem=20000] -P GUIDEseqV2 -q standard -o HPC_parallel_log/GUIDEseqV2_{Sample_Name}_%J.log')
 	parallel_parser.add_argument('--step', help='Specify which steps of pipepline to run (demultiplex, align, identify,visualize)', default='demultiplex+align+identify+visualize')
 	parallel_parser.add_argument('--overwrite', help='overwrite specifications in the yaml file', default=None,type=yaml.load)
 

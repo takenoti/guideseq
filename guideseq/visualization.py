@@ -39,6 +39,8 @@ def parse_homer(identified,homer_output,genome,refseq_names=None):
 	# print (identified)
 	# print (homer_output)
 	df = pd.read_csv(identified,sep="\t")
+	df = df.fillna("") # not main chr can cause NA in homer
+	# chrEBV:171786-171794	chrEBV	171787	171794	+	0	NA	NA	NA	NA	NA
 	df.index = df['BED_Name'].to_list()
 	df2 = pd.read_csv(homer_output,sep="\t",index_col=0)
 	df2[select_col] = df2.apply(reformat_homer_annotation,axis=1)
@@ -46,7 +48,7 @@ def parse_homer(identified,homer_output,genome,refseq_names=None):
 	# print (df.head())
 	if refseq_names!=None:
 		myDict = parse_HGNC(refseq_names)
-		df['Annotation'] = [refseqID_to_HGNC_symbol(x,myDict) for x in df.Annotation]
+		df['Annotation'] = [refseqID_to_HGNC_symbol(str(x),myDict) for x in df.Annotation]
 	out = identified.replace(".txt",".annot.tsv")
 	df.to_csv(out,sep="\t",index=False)
 	return out
@@ -77,7 +79,7 @@ def parseSitesFile(infile):
 			line = line.rstrip('\n')
 			line_items = line.split('\t')
 			offtarget_reads = int(line_items[11].strip())
-			control_primer = float(line_items[44].strip())
+			control_primer = float(line_items[45].strip())
 			no_bulge_offtarget_sequence = line_items[26]
 			bulge_offtarget_sequence = line_items[31]
 			target_seq = line_items[42]
@@ -86,7 +88,7 @@ def parseSitesFile(infile):
 			
 			
 			try:
-				annot = line_items[47]
+				annot = line_items[-1]
 			except:
 				annot = ""
 			if no_bulge_offtarget_sequence != '' or bulge_offtarget_sequence != '':
@@ -107,16 +109,17 @@ def parseSitesFile(infile):
 
 				if bulge_offtarget_sequence:
 					total_seq += 1
-					coord = f"{line_items[0]}:{line_items[38]}-{line_items[39]}({line_items[37]})"
+					coord = f"{line_items[0]}:{int(float(line_items[38]))}-{int(float(line_items[39]))}({line_items[37]})"
 					num_mismatch = get_int(line_items[34])
 				if no_bulge_offtarget_sequence:
 					total_seq += 1
-					coord = f"{line_items[0]}:{line_items[29]}-{line_items[30]}({line_items[28]})"
+					coord = f"{line_items[0]}:{int(float(line_items[29]))}-{int(float(line_items[30]))}({line_items[28]})"
 					num_mismatch = get_int(line_items[27])
 				offtargets.append({'seq': no_bulge_offtarget_sequence.strip(),
 								   'bulged_seq': bulge_offtarget_sequence.strip(),
 								   # 'reads': "%s,%s"%(offtarget_reads,float(offtarget_reads/control_primer)),
-								   'reads': f'{offtarget_reads},{offtarget_reads/control_primer:.5f}',
+								   # 'reads': f'{offtarget_reads},{offtarget_reads/control_primer:.5f}',
+								   'reads': f'{offtarget_reads}',
 								   'coord': str(coord),
 								   'annot': str(annot),
 								   'num_mismatch': str(num_mismatch),
@@ -299,7 +302,8 @@ def visualizeOfftargets(infile, outfile, title, PAM, genome=None,refseq_names=No
 	# dwg.add(dwg.text('Coordinates', insert=(box_size * (len(target_seq) + 1) + 200, y_offset + box_size - 3), style="font-size:15px; font-family:Courier"))
 	# if genome!=None:
 		# dwg.add(dwg.text('Annotation', insert=(box_size * (len(target_seq) + 1) + 450, y_offset + box_size - 3), style="font-size:15px; font-family:Courier"))
-	dwg.add(dwg.text('Reads,Ratio', insert=(x_offset + box_size * len(target_seq) + 16, y_offset + box_size - 3), style="font-size:15px; font-family:Courier"))
+	# dwg.add(dwg.text('Reads,Ratio', insert=(x_offset + box_size * len(target_seq) + 16, y_offset + box_size - 3), style="font-size:15px; font-family:Courier"))
+	dwg.add(dwg.text('Reads', insert=(x_offset + box_size * len(target_seq) + 16, y_offset + box_size - 3), style="font-size:15px; font-family:Courier"))
 	dwg.add(dwg.text('Mismatches', insert=(box_size * (len(target_seq) + 1) + 150, y_offset + box_size - 3), style="font-size:15px; font-family:Courier"))
 	dwg.add(dwg.text('Coordinates', insert=(box_size * (len(target_seq) + 1) + 250, y_offset + box_size - 3), style="font-size:15px; font-family:Courier"))
 	if genome!=None:

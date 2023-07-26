@@ -13,7 +13,7 @@ library(BSgenome.Hsapiens.UCSC.hg38)
 library(ggforce)
 library(ggrepel)
 library(viridis)
-
+message(input_file)
 CHANGEseq_matched = read_tsv(input_file,col_names=T)
 
 names(CHANGEseq_matched)[names(CHANGEseq_matched) == "BED_Max.Position"] <- "end"
@@ -46,16 +46,38 @@ hg38_tbl = tibble( chr = names(seqlengths(hg38)), chr_len = as.numeric(seqlength
 # Add a variable called BPcum that adds the position to the total calculated above
 # Select only sample, chr, start, tot, BPcum, and reads for final table
 
-  circleseq_matched_manhattan_annotated = CHANGEseq_matched %>% 
-    filter(chr!="chrM") %>%
-    left_join(hg38_tbl, by="chr") %>% 
-    mutate(sample = str_replace(sample, "CRL[0-9]{3}_", "")) %>%
-    arrange(sample, chr, start) %>%
-    mutate(BPcum=start+tot) %>%
-    select(sample, name,chr, start, tot, BPcum, reads, distance) %>%
-    group_by(sample) %>%
-    mutate(label_x=ifelse(distance==0, BPcum, NA), label_y=ifelse(distance==0, reads, NA), 
-           label_distance=ifelse(distance==0, 0.1*max(reads), NA))
+  # circleseq_matched_manhattan_annotated = CHANGEseq_matched %>% 
+    # filter(chr!="chrM") %>%
+    # left_join(hg38_tbl, by="chr") %>% 
+    # mutate(sample = str_replace(sample, "CRL[0-9]{3}_", "")) %>%
+    # arrange(sample, chr, start) %>%
+    # mutate(BPcum=start+tot) %>%
+    # select(sample, name,chr, start, tot, BPcum, reads, distance) 
+# tryCatch({
+  # circleseq_matched_manhattan_annotated = circleseq_matched_manhattan_annotated %>% 
+    # group_by(sample) %>%
+    # mutate(label_x=ifelse(distance==0, BPcum, NA), label_y=ifelse(distance==0, reads, NA), 
+           # label_distance=ifelse(distance==0, 0.1*max(reads), NA))
+
+# },error=function(cond){
+  # return (NA)
+# },warning=function(cond){
+  # return (NA)
+# },
+# ,finally={message("Couldn't find on-target sequence")}
+# )
+
+circleseq_matched_manhattan_annotated = CHANGEseq_matched %>% 
+filter(chr!="chrM") %>%
+left_join(hg38_tbl, by="chr") %>% 
+mutate(sample = str_replace(sample, "CRL[0-9]{3}_", "")) %>%
+arrange(sample, chr, start) %>%
+mutate(BPcum=start+tot) %>%
+select(sample, chr, start, tot, BPcum, reads, distance) %>%
+group_by(sample) %>%
+mutate(label_x=ifelse(distance==0, BPcum, NA), label_y=ifelse(distance==0, reads, NA), 
+       label_distance=ifelse(distance==0, 0.1*max(reads), NA))
+# when match on-target sequence
     # mutate(label_x=ifelse(name==on_target, BPcum, NA), label_y=ifelse(name==on_target, reads, NA), 
            # label_distance=ifelse(name==on_target, 0.1*max(reads), NA))
 
@@ -80,7 +102,7 @@ circleseq_matched_manhattan_annotated %>%
                linejoin="mitre", arrow=arrow(length=unit(0.2, "cm")), size=0.5) +
   
     # custom X axis:
-  scale_x_continuous( name="Chromosome", label = axisdf$chr, breaks= axisdf$center, limits=c(0, 3188269832) ) +
+  scale_x_continuous( name="Chromosome", label = axisdf$chr, breaks= axisdf$center, limits=c(0, tail(hg38_tbl$tot,1)) ) +
   scale_y_continuous( name="GUIDE-seq V2 read count", expand = c(0, 0) ) +     # remove space between plot area and x axis
   
   # Customize the theme:
