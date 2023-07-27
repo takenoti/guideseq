@@ -1,26 +1,49 @@
-reference_genome: test_genome.fa
-output_folder: output
+reference_genome: chr19.fa
+blacklist: hg38-blacklist.v2.bed.gz
+genome: hg38
+# if not specified, default is NGG
+PAM: NGG
 
+# output folder directory (absolute or relative path), if not specified, default is current dir
+analysis_folder: ./
+
+
+# PATH to analysis tools
+# If not specified, default is just the tool name, i.e., accessible in the $PATH
 bwa: bwa
+samtools: samtools
 bedtools: bedtools
+umi_tools: umi_tools
 
-demultiplex_min_reads: 1000
+# optional, to generate the off-target Manhattan plot
+Rscript: /home/yli11/.conda/envs/captureC/bin/Rscript
 
-undemultiplexed:
-    forward: data/undemultiplexed/undemux.r1.fastq.gz
-    reverse: data/undemultiplexed/undemux.r2.fastq.gz
-    index1: data/undemultiplexed/undemux.i1.fastq.gz
-    index2: data/undemultiplexed/undemux.i2.fastq.gz
+
+window_size: 25
+max_score: 7
+mapq_threshold: 50
+
+
+# DEMULTIPLEX 
+# ------------
+demultiplex:
+    min_reads: 10000
+    mismatch: 1
+    forward: test_fastq_R1_001.fastq
+    reverse: test_fastq_R2_001.fastq
+    index1: test_fastq_I1_001.fastq
+    index2: test_fastq_I2_001.fastq
+    out_dir: demultiplexed # relative to analysis_folder
+    input_dir: ./ # relative to analysis_folder
+    subsample_reads: -1
 
 samples:
-    control:
-        target:  
-        barcode1: CTCTCTAC
-        barcode2: CTCTCTAT
-        description: Control
+    test:
+        target: GGGGCCACTAGGGACAGGATNGG
+        barcode1: CCTGAGGA
+        barcode2: GTAAGGAG
+        controlbarcode1: GGGGGGGG
+        controlbarcode2: TGCGAACC
+        description:  test_description
 
-    EMX1:
-        target: GAGTCCGAGCAGAAGAAGAANGG
-        barcode1: TAGGCATG
-        barcode2: TAGATCGC
-        description: EMX_site1
+
