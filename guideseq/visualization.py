@@ -175,6 +175,12 @@ def to_simple_table(infile,outfile):
 	df=df[(df[col[0]].notna())|(df[col[1]].notna())]
 	df.to_csv(outfile,sep="\t",index=False)
 
+def to_rm_control_table(infile):
+	control_infile = "/".join(infile.split("/")[:-1])+"/Control_"+infile.split("/")[-1]
+	outfile = infile.replace("annot.tsv","annot.rm_control.tsv")
+	command = f"bedtools intersect -a {infile} -b {control_infile} -v -wa -header >{outfile}"
+	os.system(command)
+
 def visualizeOfftargets(infile, outfile, title, PAM, genome=None,refseq_names=None):
 									  
 							
@@ -201,6 +207,7 @@ def visualizeOfftargets(infile, outfile, title, PAM, genome=None,refseq_names=No
 	offtargets, target_seq, total_seq = parseSitesFile(infile)
 
 	to_simple_table(infile,infile.replace(".annot.tsv",".rm_no_match.annot.tsv"))
+	to_rm_control_table(infile.replace(".annot.tsv",".rm_no_match.annot.tsv"))
 																										   
 						 
 																			   
