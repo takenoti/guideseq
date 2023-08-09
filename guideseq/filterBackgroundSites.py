@@ -12,7 +12,7 @@ def filterBackgroundSites(bedtools_path, sample_path, control_path, outfile):
 	with open(outfile, 'w') as outfile:
 		subprocess.call(bedtools_filter_command.split(), stdout=outfile)
 
-def filterControl_old(bedtools_path, sample_path, control_path, outfile):
+def filterControl(bedtools_path, sample_path, control_path, outfile):
 	output_folder = os.path.dirname(outfile)
 	if not os.path.exists(output_folder):
 		os.makedirs(output_folder)
@@ -25,13 +25,6 @@ def filterControl_old(bedtools_path, sample_path, control_path, outfile):
 	subprocess.call(bedtools_sort_command1,shell=True)
 	subprocess.call(bedtools_closest_command,shell=True)
 	
-def filterControl(bedtools_path, sample_path, control_path, outfile):
-	output_folder = os.path.dirname(outfile)
-	if not os.path.exists(output_folder):
-		os.makedirs(output_folder)
-
-	bedtools_filter_command = '{0} intersect -a {1} -b {2} -v -wa -header > {3}'.format(bedtools_path, sample_path, control_path,outfile)
-	subprocess.call(bedtools_filter_command,shell=True)
 
 def filterBlackList(bedtools_path, sample_path, bl_path, outfile):
 	output_folder = os.path.dirname(outfile)
