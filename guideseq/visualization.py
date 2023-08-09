@@ -176,6 +176,8 @@ def to_simple_table(infile,outfile):
 	df.to_csv(outfile,sep="\t",index=False)
 
 def to_rm_control_table(infile):
+	if "Control_" in infile.split("/")[-1]:
+		return 1
 	control_infile = "/".join(infile.split("/")[:-1])+"/Control_"+infile.split("/")[-1]
 	outfile = infile.replace("annot.tsv","annot.rm_control.tsv")
 	command = f"bedtools intersect -a {infile} -b {control_infile} -v -wa -header >{outfile}"

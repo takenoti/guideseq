@@ -17,9 +17,9 @@ def filterControl(bedtools_path, sample_path, control_path, outfile):
 	if not os.path.exists(output_folder):
 		os.makedirs(output_folder)
 
-	bedtools_sort_command = '{0} sort -i {1} > {1}.sorted'.format(bedtools_path, sample_path)
-	bedtools_sort_command1 = '{0} sort -i {1} > {1}.sorted'.format(bedtools_path, control_path)
-	bedtools_closest_command = '{0} closest -a {1}.sorted -b {2}.sorted -d > {3};rm {1}.sorted;rm {2}.sorted'.format(bedtools_path, sample_path, control_path,outfile)
+	bedtools_sort_command = '{0} sort -i {1} -header > {1}.sorted'.format(bedtools_path, sample_path)
+	bedtools_sort_command1 = '{0} sort -i {1} -header > {1}.sorted'.format(bedtools_path, control_path)
+	bedtools_closest_command = '{0} closest -a {1}.sorted -b {2}.sorted -d -header > {3};rm {1}.sorted;rm {2}.sorted'.format(bedtools_path, sample_path, control_path,outfile)
 
 	subprocess.call(bedtools_sort_command,shell=True)
 	subprocess.call(bedtools_sort_command1,shell=True)
