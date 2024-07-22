@@ -29,7 +29,7 @@ CONSOLIDATE_MIN_QUAL: 15
 CONSOLIDATE_MIN_FREQ: 0.9
 
 # parallel
-njobs: 6
+njobs: 12
 
 
 # read filter

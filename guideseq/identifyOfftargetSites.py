@@ -157,10 +157,11 @@ class chromosomePosition():
 			primer_geometric_mean = (primer1 * primer2) ** 0.5
 			most_frequent_chromosome = sorted_list[-1][0]
 			most_frequent_position = sorted_list[-1][1]
-			if "chr" in most_frequent_chromosome:
-				BED_format_chromosome = most_frequent_chromosome
-			else:
-				BED_format_chromosome = "chr" + most_frequent_chromosome
+			BED_format_chromosome = most_frequent_chromosome
+			# if "chr" in most_frequent_chromosome:
+				# BED_format_chromosome = most_frequent_chromosome
+			# else:
+				# BED_format_chromosome = "chr" + most_frequent_chromosome
 			# BED_name = BED_format_chromosome + "_" + str(most_frequent_position) + "_" + str(barcode_sum)
 			BED_name = f"{BED_format_chromosome}:{min_position}-{max_position}"
 			offtarget_sequence = self.getSequence(self.genome, most_frequent_chromosome, most_frequent_position - windowsize, most_frequent_position + windowsize)
@@ -219,18 +220,26 @@ def extendedPattern(seq, indels=1, errors=7):
 	return '(?b:' + realign_pattern + ')' + '{{i<={0},d<={0},s<={1},3i+3d+1s<={1}}}'.format(indels, errors)
 
 
-def realignedSequences(targetsite_sequence, chosen_alignment, errors=7):
+def realignedSequences(targetsite_sequence, chosen_alignment, errors=7,PAM="NGG"):
 	match_sequence = chosen_alignment.group()
 	substitutions, insertions, deletions = chosen_alignment.fuzzy_counts
 
 	# get the .fuzzy_counts associated to the matching sequence after adjusting for indels, where 0 <= INS, DEL <= 1
 	realigned_fuzzy = (substitutions, max(0, insertions - 1), max(0, deletions - 1))
-
+	'''
 	if insertions:  # DNA-bulge
 		if targetsite_sequence.index('N') > len(targetsite_sequence)/2:  # PAM is on the right end
 			targetsite_realignments = [targetsite_sequence[:i + 1] + '-' + targetsite_sequence[i + 1:] for i in range(targetsite_sequence.index('N') + 1)]
 		else:
 			targetsite_realignments = [targetsite_sequence[:i] + '-' + targetsite_sequence[i:] for i in range(targetsite_sequence.index('N'), len(targetsite_sequence))]
+	else:
+		targetsite_realignments = [targetsite_sequence]
+	'''
+	if insertions:  # DNA-bulge
+		if targetsite_sequence.index(PAM) > len(targetsite_sequence)/2:  # PAM is on the right end
+			targetsite_realignments = [targetsite_sequence[:i + 1] + '-' + targetsite_sequence[i + 1:] for i in range(targetsite_sequence.index(PAM) + 1)]
+		else:
+			targetsite_realignments = [targetsite_sequence[:i] + '-' + targetsite_sequence[i:] for i in range(targetsite_sequence.index(PAM), len(targetsite_sequence))]
 	else:
 		targetsite_realignments = [targetsite_sequence]
 
@@ -255,7 +264,7 @@ def realignedSequences(targetsite_sequence, chosen_alignment, errors=7):
 Given a targetsite and window, use a fuzzy regex to align the targetsite to
 the window. Returns the best match.
 """
-def alignSequences(targetsite_sequence, window_sequence, max_score=7):
+def alignSequences(targetsite_sequence, window_sequence, max_score=7,PAM="NGG"):
 
 	window_sequence = window_sequence.upper()
 	query_regex_standard, query_regex_gap = regexFromSequence(targetsite_sequence, errors=max_score)
@@ -303,7 +312,7 @@ def alignSequences(targetsite_sequence, window_sequence, max_score=7):
 	bulged_offtarget_sequence, score, length, substitutions, insertions, deletions, bulged_start, bulged_end, realigned_target = \
 		'', '', '', '', '', '', '', '', 'none'
 	if chosen_alignment_b:
-		realigned_target, bulged_offtarget_sequence = realignedSequences(targetsite_sequence, chosen_alignment_b, max_score)
+		realigned_target, bulged_offtarget_sequence = realignedSequences(targetsite_sequence, chosen_alignment_b, max_score,PAM)
 		if bulged_offtarget_sequence:
 			length = len(chosen_alignment_b.group())
 			substitutions, insertions, deletions = chosen_alignment_b.fuzzy_counts
@@ -429,7 +438,7 @@ def analyze(sam_filename, reference_genome, outfile, annotations, windowsize, ma
 			if target_sequence:
 				offtarget_sequence_no_bulge, mismatches, chosen_alignment_strand_m, start_no_bulge, end_no_bulge, \
 				bulged_offtarget_sequence, length, distance, substitutions, insertions, deletions, chosen_alignment_strand_b, bulged_start, bulged_end, \
-				realigned_target_sequence = alignSequences(target_sequence, window_sequence, max_score)
+				realigned_target_sequence = alignSequences(target_sequence, window_sequence, max_score,myDict['PAM'])
 				# print (realigned_target_sequence,target_sequence, window_sequence, max_score)
 				BED_score = 1
 				BED_chromosome = window_chromosome

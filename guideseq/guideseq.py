@@ -420,9 +420,12 @@ class GuideSeq:
 		try:
 			for sample in self.samples:
 				cmd = f'python {current_script} main --manifest {manifest_path} --sample {sample} --step {step} --overwrite "{overwrite}"'
-				logger.info(cmd)
+				# logger.info(cmd)
 				# continue
-				subprocess.call(lsf.replace("{Sample_Name}",sample).split() + [f"-J {sample[:10]}"] + [cmd])
+				# subprocess.call(lsf.replace("{Sample_Name}",sample).split() + [f"-J {sample[:20]}"] + [cmd])
+				cmd=lsf.replace("{Sample_Name}",sample) + f" -J {sample[:10]} " + cmd
+				logger.info(cmd)
+				subprocess.call(cmd,shell=True)
 				count += 1
 			logger.info('Finished job submission')
 
@@ -441,7 +444,7 @@ def parse_args():
 	parallel_parser = subparsers.add_parser('parallel', help='submit a job for each sample specified in the YAML file. Tested in the LSF system. May not work in other job management systems.')
 	parallel_parser.add_argument('--manifest', '-m', help='Specify the manifest Path', required=True)
 	parallel_parser.add_argument('--sample', '-s', help='Specify sample to process (default is all)', default='all')
-	parallel_parser.add_argument('--lsf', '-l', help='Specify LSF CMD', default='bsub -R rusage[mem=150000] -P GUIDEseqV2 -q standard -o HPC_parallel_log/GUIDEseqV2_{Sample_Name}_%J.log')
+	parallel_parser.add_argument('--lsf', '-l', help='Specify LSF CMD', default='bsub -n 12 -R "span[hosts=1] rusage[mem=12000]" -P GUIDEseqV2 -q standard -o HPC_parallel_log/GUIDEseqV2_{Sample_Name}_%J.log')
 	parallel_parser.add_argument('--step', help='Specify which steps of pipepline to run (demultiplex, align, identify,visualize)', default='demultiplex+align+identify+visualize')
 	parallel_parser.add_argument('--overwrite', help='overwrite specifications in the yaml file', default=None,type=yaml.load)
 

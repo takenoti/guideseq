@@ -56,7 +56,7 @@ def alignReads(HG19_path, read1, read2, outfile,njobs=6,umi_tools="umi_tools",sa
 	os.system(command)
 	# command = "{0} dedup --stdin={1}/{2}.st.bam --log={1}/{2}.dedup.log --output-stats={1}/{2}.stats.tsv --paired > {1}/{2}.dedup.bam;{3} index {1}/{2}.dedup.bam;{3} view {1}/{2}.dedup.bam > {1}/{2}.dedup.sam".format(umi_tools,output_folder,sample_name,samtools)
 	# removing --output-stats, for large memory usage
-	command = "{0} dedup --stdin={1}/{2}.st.bam --log={1}/{2}.dedup.log --paired > {1}/{2}.dedup.bam;{3} index {1}/{2}.dedup.bam;{3} view {1}/{2}.dedup.bam > {1}/{2}.dedup.sam".format(umi_tools,output_folder,sample_name,samtools)
+	command = "{0} dedup --method unique --stdin={1}/{2}.st.bam --log={1}/{2}.dedup.log --paired > {1}/{2}.dedup.bam;{3} index {1}/{2}.dedup.bam;{3} view {1}/{2}.dedup.bam > {1}/{2}.dedup.sam".format(umi_tools,output_folder,sample_name,samtools)
 	logger.info(command)
 	os.system(command)
 	logger.info('Paired end mapping for {0} completed.'.format(sample_name))
