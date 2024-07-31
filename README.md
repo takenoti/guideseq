@@ -155,7 +155,7 @@ samples:
         barcode1: CCTGAGGA
         barcode2: GTAAGGAG
         controlbarcode1: GGGGGGGG
-        controlbarcode2: TGCGAACC
+        controlbarcode2: GTAAGGAG
         description:  test_description
 ```
 
