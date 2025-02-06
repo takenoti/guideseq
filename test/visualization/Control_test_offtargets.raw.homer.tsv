@@ -1,0 +1,1 @@
+PeakID (cmd=annotatePeaks.pl ./identified/Control_test_identifiedOfftargets.rmblck.txt hg38)	Chr	Start	End	Strand	Peak Score	Focus Ratio/Region Size	Annotation	Detailed Annotation	Distance to TSS	Nearest PromoterID	Entrez ID	Nearest Unigene	Nearest Refseq	Nearest Ensembl	Gene Name	Gene Alias	Gene Description	Gene Type

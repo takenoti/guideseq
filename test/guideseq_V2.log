@@ -1,0 +1,324 @@
+[07/31 02:24:19PM][INFO][guideseq] User command: ../guideseq/guideseq.py main -m test_manifest.yaml
+[07/31 02:24:19PM][INFO][guideseq] Loading manifest...
+[07/31 02:24:19PM][INFO][guideseq] 
+-----------------------------  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+reference_genome               chr19.fa
+blacklist                      hg38-blacklist.v2.bed.gz
+genome                         hg38
+PAM                            NGG
+analysis_folder                ./
+bwa                            bwa
+samtools                       samtools
+bedtools                       bedtools
+umi_tools                      umi_tools
+Rscript                        /home/yli11/.conda/envs/captureC/bin/Rscript
+window_size                    25
+max_score                      7
+mapq_threshold                 50
+demultiplex                    {'min_reads': 10000, 'mismatch': 1, 'forward': 'test_fastq_R1_001.fastq', 'reverse': 'test_fastq_R2_001.fastq', 'index1': 'test_fastq_I1_001.fastq', 'index2': 'test_fastq_I2_001.fastq', 'out_dir': './demultiplexed', 'input_dir': '././', 'subsample_reads': -1}
+trim_galore                    trim_galore
+cutadapt                       cutadapt
+on_target_reference_sequence   GTCCCTAGTGGCCCCACTGTAGG
+save_pickle                    True
+CONSOLIDATE_MIN_QUAL           15
+CONSOLIDATE_MIN_FREQ           0.9
+njobs                          12
+i7+                            ATACCGTTATTAACATATGACA
+i7-                            GTTTAATTGAGTTGTCATATGTTAATAAC
+dsODN_primer                   GTTTAATTGAGTTGTCATATGTTAATAACGGTAT
+dsODN_primer_revcomp           ATACCGTTATTAACATATGACAACTCAATTAAAC
+control_primer_coord           chr2:99357763-99357801
+control_primer                 AGATGCCTTTGGGGATACTCC
+i7+_match_distance             2
+i7-_match_distance             3
+control_primer_match_distance  2
+i7+_mispriming_distance        3
+i7-_mispriming_distance        2
+i7+_mispriming_length          12
+i7-_mispriming_length          5
+refseq_names                   /research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/src/guideseq_V3/guideseq/refseq_gene_name.py
+Manhattan.R                    /research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/src/guideseq_V3/guideseq/Manhattan.R
+control_coord_chr              chr2
+control_coord_start            99357763
+control_coord_end              99357801
+-----------------------------  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[07/31 02:24:19PM][INFO][guideseq] 
+---------------  -----------------------
+target           GGGGCCACTAGGGACAGGATNGG
+barcode1         CCTGAGGA
+barcode2         GTAAGGAG
+controlbarcode1  GGGGGGGG
+controlbarcode2  TGCGAACC
+description      test_description
+---------------  -----------------------
+[07/31 02:24:19PM][INFO][guideseq] Demultiplexing Undetermined files...
+[07/31 02:24:19PM][INFO][demultiplex] Wrote FASTQs for the 0 sample barcodes out of 1 with at least 10000 reads.
+[07/31 02:24:19PM][INFO][guideseq] Successfully demultiplexed reads.
+[07/31 02:24:19PM][INFO][guideseq] Aligning reads and collapsing reads based on UMI...
+[07/31 02:24:19PM][INFO][alignReads] BWA genome index found.
+[07/31 02:24:19PM][INFO][alignReads] Running paired end mapping for test
+[07/31 02:24:19PM][INFO][alignReads] bwa mem -t 12 chr19.fa ./demultiplexed/test.r1.fastq ./demultiplexed/test.r2.fastq > ./aligned/test.sam
+[07/31 02:24:20PM][INFO][alignReads] samtools view -bS ./aligned/test.sam > ./aligned/test.bam;samtools sort -o ./aligned/test.st.bam ./aligned/test.bam;samtools index ./aligned/test.st.bam
+[07/31 02:24:21PM][INFO][alignReads] umi_tools dedup --method unique --stdin=./aligned/test.st.bam --log=./aligned/test.dedup.log --paired > ./aligned/test.dedup.bam;samtools index ./aligned/test.dedup.bam;samtools view ./aligned/test.dedup.bam > ./aligned/test.dedup.sam
+[07/31 02:24:31PM][INFO][alignReads] Paired end mapping for test completed.
+[07/31 02:24:31PM][INFO][alignReads] BWA genome index found.
+[07/31 02:24:31PM][INFO][alignReads] Running paired end mapping for Control_test
+[07/31 02:24:31PM][INFO][alignReads] bwa mem -t 12 chr19.fa ./demultiplexed/Control_test.r1.fastq ./demultiplexed/Control_test.r2.fastq > ./aligned/Control_test.sam
+[07/31 02:24:31PM][INFO][alignReads] samtools view -bS ./aligned/Control_test.sam > ./aligned/Control_test.bam;samtools sort -o ./aligned/Control_test.st.bam ./aligned/Control_test.bam;samtools index ./aligned/Control_test.st.bam
+[07/31 02:24:31PM][INFO][alignReads] umi_tools dedup --method unique --stdin=./aligned/Control_test.st.bam --log=./aligned/Control_test.dedup.log --paired > ./aligned/Control_test.dedup.bam;samtools index ./aligned/Control_test.dedup.bam;samtools view ./aligned/Control_test.dedup.bam > ./aligned/Control_test.dedup.sam
+[07/31 02:24:32PM][INFO][alignReads] Paired end mapping for Control_test completed.
+[07/31 02:24:32PM][INFO][guideseq] Finished aligning reads to genome.
+[07/31 02:24:32PM][INFO][guideseq] Identifying offtarget sites...
+[07/31 02:24:32PM][INFO][identifyOfftargetSites] Processing SAM file ./aligned/test.dedup.sam
+[07/31 02:24:34PM][INFO][identifyOfftargetSites] Processing SAM file ./aligned/Control_test.dedup.sam
+[07/31 02:24:34PM][INFO][guideseq] Finished identifying offtarget sites.
+[07/31 02:24:34PM][INFO][guideseq] Filtering background sites
+[07/31 02:24:34PM][INFO][guideseq] Finished background filtering for test sample
+[07/31 02:24:34PM][INFO][guideseq] Visualizing off-target sites
+[07/31 02:24:58PM][INFO][guideseq] /home/yli11/.conda/envs/captureC/bin/Rscript /research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/src/guideseq_V3/guideseq/Manhattan.R GGGGCCACTAGGGACAGGATNGG ./identified/test_identifiedOfftargets.rmblck.rm_no_match.annot.tsv ./visualization/test.Manhattan.pdf
+[07/31 02:26:00PM][ERROR][guideseq] Error visualizing off-target sites: Control_test
+[07/31 02:26:00PM][ERROR][guideseq] Traceback (most recent call last):
+  File "../guideseq/guideseq.py", line 401, in visualize
+    visualizeOfftargets(infile, outfile, title=sample,PAM=self.parameters['PAM'],genome=self.parameters['genome'],refseq_names=self.parameters['refseq_names'])
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/src/guideseq_V3/guideseq/visualization.py", line 207, in visualizeOfftargets
+    infile = parse_homer(infile,outfile+".raw.homer.tsv",genome,refseq_names=refseq_names)
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/src/guideseq_V3/guideseq/visualization.py", line 46, in parse_homer
+    df2[select_col] = df2.apply(reformat_homer_annotation,axis=1)
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/anaconda3/envs/changeseq_py3/lib/python3.7/site-packages/pandas/core/frame.py", line 3602, in __setitem__
+    self._set_item_frame_value(key, value)
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/anaconda3/envs/changeseq_py3/lib/python3.7/site-packages/pandas/core/frame.py", line 3729, in _set_item_frame_value
+    raise ValueError("Columns must be same length as key")
+ValueError: Columns must be same length as key
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "../guideseq/guideseq.py", line 403, in visualize
+    visualizeOfftargets(infile, outfile, title=sample,PAM="NGG",genome=self.parameters['genome'],refseq_names=self.parameters['refseq_names'])
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/src/guideseq_V3/guideseq/visualization.py", line 207, in visualizeOfftargets
+    infile = parse_homer(infile,outfile+".raw.homer.tsv",genome,refseq_names=refseq_names)
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/src/guideseq_V3/guideseq/visualization.py", line 46, in parse_homer
+    df2[select_col] = df2.apply(reformat_homer_annotation,axis=1)
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/anaconda3/envs/changeseq_py3/lib/python3.7/site-packages/pandas/core/frame.py", line 3602, in __setitem__
+    self._set_item_frame_value(key, value)
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/anaconda3/envs/changeseq_py3/lib/python3.7/site-packages/pandas/core/frame.py", line 3729, in _set_item_frame_value
+    raise ValueError("Columns must be same length as key")
+ValueError: Columns must be same length as key
+
+[07/31 02:26:00PM][INFO][guideseq] Finished visualizing off-target sites
+[07/31 02:27:35PM][INFO][guideseq] User command: ../guideseq/guideseq.py main -m test_manifest.yaml
+[07/31 02:27:36PM][INFO][guideseq] Loading manifest...
+[07/31 02:27:36PM][INFO][guideseq] 
+-----------------------------  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+reference_genome               chr19.fa
+blacklist                      hg38-blacklist.v2.bed.gz
+genome                         hg38
+PAM                            NGG
+analysis_folder                ./
+bwa                            bwa
+samtools                       samtools
+bedtools                       bedtools
+umi_tools                      umi_tools
+Rscript                        /home/yli11/.conda/envs/captureC/bin/Rscript
+window_size                    25
+max_score                      7
+mapq_threshold                 50
+demultiplex                    {'min_reads': 10000, 'mismatch': 1, 'forward': 'test_fastq_R1_001.fastq', 'reverse': 'test_fastq_R2_001.fastq', 'index1': 'test_fastq_I1_001.fastq', 'index2': 'test_fastq_I2_001.fastq', 'out_dir': './demultiplexed', 'input_dir': '././', 'subsample_reads': -1}
+trim_galore                    trim_galore
+cutadapt                       cutadapt
+on_target_reference_sequence   GTCCCTAGTGGCCCCACTGTAGG
+save_pickle                    True
+CONSOLIDATE_MIN_QUAL           15
+CONSOLIDATE_MIN_FREQ           0.9
+njobs                          12
+i7+                            ATACCGTTATTAACATATGACA
+i7-                            GTTTAATTGAGTTGTCATATGTTAATAAC
+dsODN_primer                   GTTTAATTGAGTTGTCATATGTTAATAACGGTAT
+dsODN_primer_revcomp           ATACCGTTATTAACATATGACAACTCAATTAAAC
+control_primer_coord           chr2:99357763-99357801
+control_primer                 AGATGCCTTTGGGGATACTCC
+i7+_match_distance             2
+i7-_match_distance             3
+control_primer_match_distance  2
+i7+_mispriming_distance        3
+i7-_mispriming_distance        2
+i7+_mispriming_length          12
+i7-_mispriming_length          5
+refseq_names                   /research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/src/guideseq_V3/guideseq/refseq_gene_name.py
+Manhattan.R                    /research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/src/guideseq_V3/guideseq/Manhattan.R
+control_coord_chr              chr2
+control_coord_start            99357763
+control_coord_end              99357801
+-----------------------------  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[07/31 02:27:36PM][INFO][guideseq] 
+---------------  -----------------------
+target           GGGGCCACTAGGGACAGGATNGG
+barcode1         CCTGAGGA
+barcode2         GTAAGGAG
+controlbarcode1  CCTGAGGA
+controlbarcode2  GTAAGGAG
+description      test_description
+---------------  -----------------------
+[07/31 02:27:36PM][INFO][guideseq] Demultiplexing Undetermined files...
+[07/31 02:27:36PM][INFO][demultiplex] Wrote FASTQs for the 0 sample barcodes out of 1 with at least 10000 reads.
+[07/31 02:27:36PM][INFO][guideseq] Successfully demultiplexed reads.
+[07/31 02:27:36PM][INFO][guideseq] Aligning reads and collapsing reads based on UMI...
+[07/31 02:27:36PM][INFO][alignReads] BWA genome index found.
+[07/31 02:27:36PM][INFO][alignReads] Running paired end mapping for test
+[07/31 02:27:36PM][INFO][alignReads] bwa mem -t 12 chr19.fa ./demultiplexed/test.r1.fastq ./demultiplexed/test.r2.fastq > ./aligned/test.sam
+[07/31 02:27:36PM][INFO][alignReads] samtools view -bS ./aligned/test.sam > ./aligned/test.bam;samtools sort -o ./aligned/test.st.bam ./aligned/test.bam;samtools index ./aligned/test.st.bam
+[07/31 02:27:37PM][INFO][alignReads] umi_tools dedup --method unique --stdin=./aligned/test.st.bam --log=./aligned/test.dedup.log --paired > ./aligned/test.dedup.bam;samtools index ./aligned/test.dedup.bam;samtools view ./aligned/test.dedup.bam > ./aligned/test.dedup.sam
+[07/31 02:27:41PM][INFO][alignReads] Paired end mapping for test completed.
+[07/31 02:27:41PM][INFO][alignReads] BWA genome index found.
+[07/31 02:27:41PM][INFO][alignReads] Running paired end mapping for Control_test
+[07/31 02:27:41PM][INFO][alignReads] bwa mem -t 12 chr19.fa ./demultiplexed/Control_test.r1.fastq ./demultiplexed/Control_test.r2.fastq > ./aligned/Control_test.sam
+[07/31 02:27:41PM][INFO][alignReads] samtools view -bS ./aligned/Control_test.sam > ./aligned/Control_test.bam;samtools sort -o ./aligned/Control_test.st.bam ./aligned/Control_test.bam;samtools index ./aligned/Control_test.st.bam
+[07/31 02:27:41PM][INFO][alignReads] umi_tools dedup --method unique --stdin=./aligned/Control_test.st.bam --log=./aligned/Control_test.dedup.log --paired > ./aligned/Control_test.dedup.bam;samtools index ./aligned/Control_test.dedup.bam;samtools view ./aligned/Control_test.dedup.bam > ./aligned/Control_test.dedup.sam
+[07/31 02:27:42PM][INFO][alignReads] Paired end mapping for Control_test completed.
+[07/31 02:27:42PM][INFO][guideseq] Finished aligning reads to genome.
+[07/31 02:27:42PM][INFO][guideseq] Identifying offtarget sites...
+[07/31 02:27:42PM][INFO][identifyOfftargetSites] Processing SAM file ./aligned/test.dedup.sam
+[07/31 02:27:43PM][INFO][identifyOfftargetSites] Processing SAM file ./aligned/Control_test.dedup.sam
+[07/31 02:27:43PM][INFO][guideseq] Finished identifying offtarget sites.
+[07/31 02:27:43PM][INFO][guideseq] Filtering background sites
+[07/31 02:27:43PM][INFO][guideseq] Finished background filtering for test sample
+[07/31 02:27:43PM][INFO][guideseq] Visualizing off-target sites
+[07/31 02:28:06PM][INFO][guideseq] /home/yli11/.conda/envs/captureC/bin/Rscript /research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/src/guideseq_V3/guideseq/Manhattan.R GGGGCCACTAGGGACAGGATNGG ./identified/test_identifiedOfftargets.rmblck.rm_no_match.annot.tsv ./visualization/test.Manhattan.pdf
+[07/31 02:29:02PM][ERROR][guideseq] Error visualizing off-target sites: Control_test
+[07/31 02:29:02PM][ERROR][guideseq] Traceback (most recent call last):
+  File "../guideseq/guideseq.py", line 401, in visualize
+    visualizeOfftargets(infile, outfile, title=sample,PAM=self.parameters['PAM'],genome=self.parameters['genome'],refseq_names=self.parameters['refseq_names'])
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/src/guideseq_V3/guideseq/visualization.py", line 207, in visualizeOfftargets
+    infile = parse_homer(infile,outfile+".raw.homer.tsv",genome,refseq_names=refseq_names)
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/src/guideseq_V3/guideseq/visualization.py", line 46, in parse_homer
+    df2[select_col] = df2.apply(reformat_homer_annotation,axis=1)
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/anaconda3/envs/changeseq_py3/lib/python3.7/site-packages/pandas/core/frame.py", line 3602, in __setitem__
+    self._set_item_frame_value(key, value)
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/anaconda3/envs/changeseq_py3/lib/python3.7/site-packages/pandas/core/frame.py", line 3729, in _set_item_frame_value
+    raise ValueError("Columns must be same length as key")
+ValueError: Columns must be same length as key
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "../guideseq/guideseq.py", line 403, in visualize
+    visualizeOfftargets(infile, outfile, title=sample,PAM="NGG",genome=self.parameters['genome'],refseq_names=self.parameters['refseq_names'])
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/src/guideseq_V3/guideseq/visualization.py", line 207, in visualizeOfftargets
+    infile = parse_homer(infile,outfile+".raw.homer.tsv",genome,refseq_names=refseq_names)
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/src/guideseq_V3/guideseq/visualization.py", line 46, in parse_homer
+    df2[select_col] = df2.apply(reformat_homer_annotation,axis=1)
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/anaconda3/envs/changeseq_py3/lib/python3.7/site-packages/pandas/core/frame.py", line 3602, in __setitem__
+    self._set_item_frame_value(key, value)
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/anaconda3/envs/changeseq_py3/lib/python3.7/site-packages/pandas/core/frame.py", line 3729, in _set_item_frame_value
+    raise ValueError("Columns must be same length as key")
+ValueError: Columns must be same length as key
+
+[07/31 02:29:02PM][INFO][guideseq] Finished visualizing off-target sites
+[07/31 02:30:03PM][INFO][guideseq] User command: ../guideseq/guideseq.py main -m test_manifest.yaml
+[07/31 02:30:03PM][INFO][guideseq] Loading manifest...
+[07/31 02:30:03PM][INFO][guideseq] 
+-----------------------------  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+reference_genome               chr19.fa
+blacklist                      hg38-blacklist.v2.bed.gz
+genome                         hg38
+PAM                            NGG
+analysis_folder                ./
+bwa                            bwa
+samtools                       samtools
+bedtools                       bedtools
+umi_tools                      umi_tools
+Rscript                        /home/yli11/.conda/envs/captureC/bin/Rscript
+window_size                    25
+max_score                      7
+mapq_threshold                 50
+demultiplex                    {'min_reads': 10000, 'mismatch': 1, 'forward': 'test_fastq_R1_001.fastq', 'reverse': 'test_fastq_R2_001.fastq', 'index1': 'test_fastq_I1_001.fastq', 'index2': 'test_fastq_I2_001.fastq', 'out_dir': './demultiplexed', 'input_dir': '././', 'subsample_reads': -1}
+trim_galore                    trim_galore
+cutadapt                       cutadapt
+on_target_reference_sequence   GTCCCTAGTGGCCCCACTGTAGG
+save_pickle                    True
+CONSOLIDATE_MIN_QUAL           15
+CONSOLIDATE_MIN_FREQ           0.9
+njobs                          12
+i7+                            ATACCGTTATTAACATATGACA
+i7-                            GTTTAATTGAGTTGTCATATGTTAATAAC
+dsODN_primer                   GTTTAATTGAGTTGTCATATGTTAATAACGGTAT
+dsODN_primer_revcomp           ATACCGTTATTAACATATGACAACTCAATTAAAC
+control_primer_coord           chr2:99357763-99357801
+control_primer                 AGATGCCTTTGGGGATACTCC
+i7+_match_distance             2
+i7-_match_distance             3
+control_primer_match_distance  2
+i7+_mispriming_distance        3
+i7-_mispriming_distance        2
+i7+_mispriming_length          12
+i7-_mispriming_length          5
+refseq_names                   /research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/src/guideseq_V3/guideseq/refseq_gene_name.py
+Manhattan.R                    /research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/src/guideseq_V3/guideseq/Manhattan.R
+control_coord_chr              chr2
+control_coord_start            99357763
+control_coord_end              99357801
+-----------------------------  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[07/31 02:30:03PM][INFO][guideseq] 
+---------------  -----------------------
+target           GGGGCCACTAGGGACAGGATNGG
+barcode1         CCTGAGGA
+barcode2         GTAAGGAG
+controlbarcode1  GGGGGGGG
+controlbarcode2  GTAAGGAG
+description      test_description
+---------------  -----------------------
+[07/31 02:30:03PM][INFO][guideseq] Demultiplexing Undetermined files...
+[07/31 02:30:03PM][INFO][demultiplex] Wrote FASTQs for the 0 sample barcodes out of 2 with at least 10000 reads.
+[07/31 02:30:03PM][INFO][guideseq] Successfully demultiplexed reads.
+[07/31 02:30:03PM][INFO][guideseq] Aligning reads and collapsing reads based on UMI...
+[07/31 02:30:03PM][INFO][alignReads] BWA genome index found.
+[07/31 02:30:03PM][INFO][alignReads] Running paired end mapping for test
+[07/31 02:30:03PM][INFO][alignReads] bwa mem -t 12 chr19.fa ./demultiplexed/test.r1.fastq ./demultiplexed/test.r2.fastq > ./aligned/test.sam
+[07/31 02:30:03PM][INFO][alignReads] samtools view -bS ./aligned/test.sam > ./aligned/test.bam;samtools sort -o ./aligned/test.st.bam ./aligned/test.bam;samtools index ./aligned/test.st.bam
+[07/31 02:30:04PM][INFO][alignReads] umi_tools dedup --method unique --stdin=./aligned/test.st.bam --log=./aligned/test.dedup.log --paired > ./aligned/test.dedup.bam;samtools index ./aligned/test.dedup.bam;samtools view ./aligned/test.dedup.bam > ./aligned/test.dedup.sam
+[07/31 02:30:06PM][INFO][alignReads] Paired end mapping for test completed.
+[07/31 02:30:06PM][INFO][alignReads] BWA genome index found.
+[07/31 02:30:06PM][INFO][alignReads] Running paired end mapping for Control_test
+[07/31 02:30:06PM][INFO][alignReads] bwa mem -t 12 chr19.fa ./demultiplexed/Control_test.r1.fastq ./demultiplexed/Control_test.r2.fastq > ./aligned/Control_test.sam
+[07/31 02:30:06PM][INFO][alignReads] samtools view -bS ./aligned/Control_test.sam > ./aligned/Control_test.bam;samtools sort -o ./aligned/Control_test.st.bam ./aligned/Control_test.bam;samtools index ./aligned/Control_test.st.bam
+[07/31 02:30:06PM][INFO][alignReads] umi_tools dedup --method unique --stdin=./aligned/Control_test.st.bam --log=./aligned/Control_test.dedup.log --paired > ./aligned/Control_test.dedup.bam;samtools index ./aligned/Control_test.dedup.bam;samtools view ./aligned/Control_test.dedup.bam > ./aligned/Control_test.dedup.sam
+[07/31 02:30:07PM][INFO][alignReads] Paired end mapping for Control_test completed.
+[07/31 02:30:07PM][INFO][guideseq] Finished aligning reads to genome.
+[07/31 02:30:07PM][INFO][guideseq] Identifying offtarget sites...
+[07/31 02:30:07PM][INFO][identifyOfftargetSites] Processing SAM file ./aligned/test.dedup.sam
+[07/31 02:30:08PM][INFO][identifyOfftargetSites] Processing SAM file ./aligned/Control_test.dedup.sam
+[07/31 02:30:08PM][INFO][guideseq] Finished identifying offtarget sites.
+[07/31 02:30:08PM][INFO][guideseq] Filtering background sites
+[07/31 02:30:08PM][INFO][guideseq] Finished background filtering for test sample
+[07/31 02:30:08PM][INFO][guideseq] Visualizing off-target sites
+[07/31 02:30:31PM][INFO][guideseq] /home/yli11/.conda/envs/captureC/bin/Rscript /research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/src/guideseq_V3/guideseq/Manhattan.R GGGGCCACTAGGGACAGGATNGG ./identified/test_identifiedOfftargets.rmblck.rm_no_match.annot.tsv ./visualization/test.Manhattan.pdf
+[07/31 02:31:25PM][ERROR][guideseq] Error visualizing off-target sites: Control_test
+[07/31 02:31:25PM][ERROR][guideseq] Traceback (most recent call last):
+  File "../guideseq/guideseq.py", line 401, in visualize
+    visualizeOfftargets(infile, outfile, title=sample,PAM=self.parameters['PAM'],genome=self.parameters['genome'],refseq_names=self.parameters['refseq_names'])
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/src/guideseq_V3/guideseq/visualization.py", line 207, in visualizeOfftargets
+    infile = parse_homer(infile,outfile+".raw.homer.tsv",genome,refseq_names=refseq_names)
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/src/guideseq_V3/guideseq/visualization.py", line 46, in parse_homer
+    df2[select_col] = df2.apply(reformat_homer_annotation,axis=1)
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/anaconda3/envs/changeseq_py3/lib/python3.7/site-packages/pandas/core/frame.py", line 3602, in __setitem__
+    self._set_item_frame_value(key, value)
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/anaconda3/envs/changeseq_py3/lib/python3.7/site-packages/pandas/core/frame.py", line 3729, in _set_item_frame_value
+    raise ValueError("Columns must be same length as key")
+ValueError: Columns must be same length as key
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "../guideseq/guideseq.py", line 403, in visualize
+    visualizeOfftargets(infile, outfile, title=sample,PAM="NGG",genome=self.parameters['genome'],refseq_names=self.parameters['refseq_names'])
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/src/guideseq_V3/guideseq/visualization.py", line 207, in visualizeOfftargets
+    infile = parse_homer(infile,outfile+".raw.homer.tsv",genome,refseq_names=refseq_names)
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/src/guideseq_V3/guideseq/visualization.py", line 46, in parse_homer
+    df2[select_col] = df2.apply(reformat_homer_annotation,axis=1)
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/anaconda3/envs/changeseq_py3/lib/python3.7/site-packages/pandas/core/frame.py", line 3602, in __setitem__
+    self._set_item_frame_value(key, value)
+  File "/research_jude/rgs01_jude/groups/tsaigrp/projects/Genomics/common/anaconda3/envs/changeseq_py3/lib/python3.7/site-packages/pandas/core/frame.py", line 3729, in _set_item_frame_value
+    raise ValueError("Columns must be same length as key")
+ValueError: Columns must be same length as key
+
+[07/31 02:31:25PM][INFO][guideseq] Finished visualizing off-target sites
