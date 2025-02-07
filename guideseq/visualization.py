@@ -39,6 +39,9 @@ def parse_homer(identified,homer_output,genome,refseq_names=None):
 	# print (identified)
 	# print (homer_output)
 	df = pd.read_csv(identified,sep="\t")
+	if df.shape[0]==0:
+		print (f"{identified} No off-target found, check if this is a control sample")
+		exit()
 	df = df.fillna("") # not main chr can cause NA in homer
 	# chrEBV:171786-171794	chrEBV	171787	171794	+	0	NA	NA	NA	NA	NA
 	df.index = df['BED_Name'].to_list()

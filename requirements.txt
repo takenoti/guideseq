@@ -2,5 +2,5 @@ dill
 Levenshtein
 tabulate
 pyyaml==5.4.1
-umi_tools
-
+umi_tools==1.1.4
+pysam==0.16.0.1

@@ -32,7 +32,7 @@ def filterBlackList(bedtools_path, sample_path, bl_path, outfile):
 		os.makedirs(output_folder)
 	
 	bedtools_filter_command = '{0} intersect -a {1} -b {2} -v -wa -header > {3}'.format(bedtools_path, sample_path, bl_path,outfile)
-	# print (bedtools_filter_command)
+	print (bedtools_filter_command)
 	subprocess.call(bedtools_filter_command,shell=True)
 
 

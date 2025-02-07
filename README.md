@@ -5,7 +5,7 @@
 
 # guideseq: The GUIDE-Seq Analysis Package
 
-The guideseq package implements our data preprocessing and analysis pipeline for GUIDE-Seq-2 or pooled GUIDE-Seq data. It takes raw sequencing reads (FASTQ) and a parameter manifest file (.yaml) as input and produces a table of annotated off-target sites as output.
+The guideseq package implements our data preprocessing and analysis pipeline for GUIDE-Seq-2 data. It takes raw sequencing reads (FASTQ) and a parameter manifest file (.yaml) as input and produces a table of annotated off-target sites as output.
 
 ## Table of Contents
 - [Features](#features)
@@ -36,15 +36,34 @@ The individual pipeline steps are:
 
 3. **Read Alignment**: The demultiplexed, consolidated paired end reads are aligned to a reference genome using the BWA-MEM algorithm with default parameters (Li. H, 2009).
 
-4. **Candidate Site Identification**: The start mapping positions of the read amplified with the tag-specific primer (second of pair) are tabulated on a genome-wide basis. Start mapping positions are consolidated using a 10-bp sliding window. Windows with reads mapping to both + and - strands, or to the same strand but amplified with both forward and reverse tag-specific primers, are flagged as sites of potential DSBs. 25 bp of reference sequence is retrieved on either side of the most frequently occuring start-mapping position in each flagged window. The retrieved sequence is aligned to the intended target sequence using a Smith-Waterman local-alignment algorithm. 
+4. **Candidate Site Identification**: The start mapping positions of the read amplified with the tag-specific primer (R2) are tabulated on a genome-wide basis. Start mapping positions are consolidated using a 10-bp sliding window (internal parameter). Windows with reads mapping to both + and - strands, or to the same strand but amplified with both forward and reverse tag-specific primers, are flagged as sites of potential DSBs. 25 bp of reference sequence (`window_size`) is retrieved on either side of the most frequently occuring start-mapping position in each flagged window. The retrieved sequence is aligned to the intended target sequence using a Smith-Waterman local-alignment algorithm. 
 
-5. **False positive filtering**: Off-target cleavage sites with more than six mismatches to the intended target sequence, or that are present in background controls, are filtered out
+5. **False positive filtering**: Off-target cleavage sites with more than 7 mismatches (`max_score`, mismatch counted as 1, indel counted as 3) to the intended target sequence, or that are present in background controls, are filtered out.
 
 6. **Reporting**: Identified off-targets, sorted by GUIDE-Seq read count are annotated in a final output table. The GUIDE-Seq read count is expected to scale approximately linearly with cleavage rates (Tsai et al., *Nat Biotechnol.* 2015).
 
 7. **Visualization**: Alignment of detected off-target sites is visualized via a color-coded sequence grid, as seen below:
 
 ![guideseq_flowchart](vis_example.PNG)
+
+## Docker Usage
+
+The simplest way to use tools developed in Tsai Lab.
+
+```
+
+docker pull liyc1989/tsailab
+
+git clone https://github.com/tsailabSJ/guideseq.git
+
+cd guideseq
+
+docker run --rm -v .:/app tsailabsj sh -c "python ../guideseq/guideseq.py -h"
+
+docker run --rm -v .:/app tsailabsj sh -c "cd test;python ../guideseq/guideseq.py main -m test_manifest.yaml"
+
+```
+
 
 ## Dependencies<a name="dependencies"></a>
 * Python 3
@@ -55,7 +74,7 @@ The individual pipeline steps are:
 * [`homer`](<http://homer.ucsd.edu/homer/>) off-target annotation
 * [`UMItools`](<https://github.com/CGATOxford/UMI-tools>) UMI deduplication
 * [`seqtk`](<https://github.com/lh3/seqtk>) optional, for downsampling data if specified
-
+* R `ggplot` and `bsgenome` for off-target manhattan plot, optional
 
 
 ## Getting Set Up<a name="setup"></a>
@@ -71,22 +90,37 @@ conda create -n guideseq -c liyc1989 guide_seq
 ## could also be conda activate guideseq
 source activate guideseq
 
+conda install -c conda-forge -c bioconda cutadapt=3.4 bedtools=2.25.0
+
 pip install -r requirements.txt
 # homer installation can be difficult
-conda install -c bioconda homer
+conda install -c bioconda homer==4.11
+# install hg38, replace with your own path
+perl ~/.conda/envs/guideseq/share/homer/.//configureHomer.pl -install hg38
 
-## Using the latest V2 code
-git clone -b V2 https://github.com/tsailabSJ/guideseq.git
+
+git clone https://github.com/tsailabSJ/guideseq.git
 
 python guideseq/guideseq/guideseq.py -h
 
+```
+
+### Install R 
+
+To make off-target manhattan plot, you need to install R and the following packages.
+
+```
+conda install -c conda-forge r-base=3.6.3 r-essentials 
+conda install -c conda-forge r-ggplot2
+conda install bioconda::bioconductor-bsgenome 
+conda install bioconda::bioconductor-bsgenome.hsapiens.ucsc.hg38 
 ```
 
 ### Quickstart <a name="Quickstart"></a>
 
 ```
 
-git clone -b V2 https://github.com/tsailabSJ/guideseq
+git clone https://github.com/tsailabSJ/guideseq
 
 cd guideseq/test
 
@@ -155,13 +189,13 @@ samples:
         barcode1: CCTGAGGA
         barcode2: GTAAGGAG
         controlbarcode1: GGGGGGGG
-        controlbarcode2: GTAAGGAG
+        controlbarcode2: CGGCGACC
         description:  test_description
 ```
 
 ### A Full Manifest File Example<a name="manifest_example"></a>
 
-Below is an example of a full manifest file. Feel free to copy it and replace the parameters with your own experiment data. Remember that you can input more than just one treatment sample (e.g. the "EMX1" data below).
+Below is an example of a full manifest file. Feel free to copy it and replace the parameters with your own experiment data. Remember that you can input more than just one treatment sample (e.g. the "AAVS1_site_14" data below).
 
 ```
 reference_genome: chr19.fa
@@ -182,7 +216,7 @@ bedtools: bedtools
 umi_tools: umi_tools
 
 # optional, to generate the off-target Manhattan plot
-Rscript: /home/yli11/.conda/envs/captureC/bin/Rscript
+Rscript: Rscript
 
 
 window_size: 25
@@ -209,7 +243,7 @@ samples:
         barcode1: CCTGAGGA
         barcode2: GTAAGGAG
         controlbarcode1: GGGGGGGG
-        controlbarcode2: GTAAGGAG
+        controlbarcode2: CGGCGACC
         description:  test_description
 
 

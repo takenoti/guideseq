@@ -16,7 +16,7 @@ bedtools: bedtools
 umi_tools: umi_tools
 
 # optional, to generate the off-target Manhattan plot
-Rscript: /home/yli11/.conda/envs/captureC/bin/Rscript
+Rscript: Rscript
 
 
 window_size: 25
@@ -27,7 +27,7 @@ mapq_threshold: 50
 # DEMULTIPLEX 
 # ------------
 demultiplex:
-    min_reads: 10000
+    min_reads: 1
     mismatch: 1
     forward: test_fastq_R1_001.fastq
     reverse: test_fastq_R2_001.fastq
@@ -38,12 +38,12 @@ demultiplex:
     subsample_reads: -1
 
 samples:
-    test:
+    AAVS1_site_14:
         target: GGGGCCACTAGGGACAGGATNGG
         barcode1: CCTGAGGA
         barcode2: GTAAGGAG
         controlbarcode1: GGGGGGGG
-        controlbarcode2: GTAAGGAG
-        description:  test_description
+        controlbarcode2: CGGCGACC
+        description:  AAVS1_site_14_description
 
 

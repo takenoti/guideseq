@@ -5,6 +5,7 @@ Credits
 Development Leads
 ----------------
 
+* Yichao Li <Yichao.Li@stjude.org>
 * Shengdar Q Tsai <STSAI4@mgh.harvard.edu>
 * Martin Aryaa <Aryee.Martin@mgh.harvard.edu>
 * Ved V Topkar <vedtopkar@gmail.com>

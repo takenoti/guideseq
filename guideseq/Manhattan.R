@@ -10,9 +10,6 @@ output_file = args[3]
 library(tidyverse)
 library(BSgenome)
 library(BSgenome.Hsapiens.UCSC.hg38)
-library(ggforce)
-library(ggrepel)
-library(viridis)
 message(input_file)
 CHANGEseq_matched = read_tsv(input_file,col_names=T)
 
