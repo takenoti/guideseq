@@ -52,15 +52,15 @@ The simplest way to use tools developed in Tsai Lab.
 
 ```
 
-docker pull liyc1989/tsailab
+docker pull liyc1989/tsailabsj
 
 git clone https://github.com/tsailabSJ/guideseq.git
 
 cd guideseq
 
-docker run --rm -v .:/app tsailabsj sh -c "python ../guideseq/guideseq.py -h"
+docker run --rm -v .:/app tsailabsj sh -c "python guideseq/guideseq.py -h"
 
-docker run --rm -v .:/app tsailabsj sh -c "cd test;python ../guideseq/guideseq.py main -m test_manifest.yaml"
+docker run --rm -v .:/app tsailabsj sh -c "cd test;python guideseq/guideseq.py main -m test_manifest.yaml"
 
 ```
 
