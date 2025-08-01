@@ -46,7 +46,7 @@ The individual pipeline steps are:
 
 ![guideseq_flowchart](vis_example.PNG)
 
-## Docker Usage
+## Docker Usage, test data
 
 The simplest way to use tools developed in Tsai Lab.
 
@@ -63,6 +63,40 @@ docker run --rm -v .:/app liyc1989/tsailabsj sh -c "python guideseq/guideseq.py 
 docker run --rm -v .:/app liyc1989/tsailabsj sh -c "cd test;python /app/guideseq/guideseq.py main -m test_manifest.yaml"
 
 ```
+
+## Docker Usage, user's data
+
+Here, you need to mount multiple directories:
+
+1. the guideseq code directory, e.g. /my_path1/guideseq
+
+2. the data directory where your undetermined files are located, e.g. /my_path2/data
+
+3. (optional) the genome index directory, e.g. /my_path3/hg38
+
+```
+
+cd /my_path2/data
+
+docker run --rm -v /my_path1/guideseq:/app -v /my_path2/data:/app/data -v /my_path3/hg38:/app/genome -w /app/data liyc1989/tsailabsj sh -c "python /app/guideseq/guideseq.py main -m input.yaml"
+
+```
+
+`-v /my_path1/guideseq:/app` mounts the guideseq directory to the container's `/app` folder
+
+`-v /my_path2/data:/app/data` mounts the working directory (i.e., your undetermined fastq folder) to the container's `/app/data` folder
+
+`-v /my_path3/hg38:/app/genome` mounts the genome index folder to the container's `/app/genome` folder
+
+`-w /app/data` sets the working directory (this is the directory system in the container, not your computer)
+
+`/app/guideseq/guideseq.py` is the guideseq program location in the container
+
+`input.yaml` is your yaml file, which is in the current directory in the container
+
+In the yaml file `input.yaml`, the `reference_genome` should be `reference_genome: /app/genome/hg38.fasta`, the `analysis_folder` can be `analysis_folder: ./`
+
+
 
 
 ## Dependencies<a name="dependencies"></a>
