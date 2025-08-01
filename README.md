@@ -58,9 +58,9 @@ git clone https://github.com/tsailabSJ/guideseq.git
 
 cd guideseq
 
-docker run --rm -v .:/app tsailabsj sh -c "python guideseq/guideseq.py -h"
+docker run --rm -v .:/app liyc1989/tsailabsj sh -c "python guideseq/guideseq.py -h"
 
-docker run --rm -v .:/app tsailabsj sh -c "cd test;python guideseq/guideseq.py main -m test_manifest.yaml"
+docker run --rm -v .:/app liyc1989/tsailabsj sh -c "cd test;python /app/guideseq/guideseq.py main -m test_manifest.yaml"
 
 ```
 
