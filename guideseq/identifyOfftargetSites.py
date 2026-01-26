@@ -3,7 +3,7 @@
 # 2015-10-05 Replaced swalign with regex matching.
 # 2017-05-31 Replaced nwalign with a explicit search of realignments which uses regex.search.
 # 2017-06-03 Output the best offtarget sequences with and/ot without bulges, if any.
-# 2025-05-09 Modified alignment to use BioPython PairwiseAligner (Levenshtein scoring) with flexible bulge limits.
+# 2025-05-09 Modified alignment to use BioPython PairwiseAligner with post-alignment Levenshtein calculation.
 
 from __future__ import print_function
 
@@ -19,9 +19,8 @@ import logging
 from Levenshtein import distance
 import pandas as pd
 import dill
-import sys
-
 from Bio.Align import PairwiseAligner
+import sys
 
 logger = logging.getLogger("root")
 
@@ -307,8 +306,8 @@ class chromosomePosition:
 
 
 """
-Uses glocal alignment (Needleman-Wunsch).
-Scores: Match=0, Mismatch=-1, GapOpen=-1, GapExtend=-1 (Resulting score = -Levenshtein).
+Replaces deprecated Bio.pairwise2 with Bio.Align.PairwiseAligner.
+Uses glocal alignment (Needleman-Wunsch) with post-processing for Levenshtein distance.
 """
 
 
@@ -319,20 +318,19 @@ def alignSequences(
     window_sequence = window_sequence.upper()
     rev_target = reverseComplement(targetsite_sequence)
 
-    # Configure PairwiseAligner for Glocal Alignment
-    # Glocal: Query (Target Site) must align fully (End Gaps Penalized).
-    #         Target (Window) matches locally (End Gaps Free).
+    # Configure PairwiseAligner for Finding Best Anchor (High scores preferred)
     aligner = PairwiseAligner()
     aligner.mode = "global"
-
-    # Levenshtein Scoring: Match=0, Errors (Mismatch/Gap)=-1
-    aligner.match_score = 0
-    aligner.mismatch_score = -1
-    aligner.open_gap_score = -1
-    aligner.extend_gap_score = -1
-
-    # Free target end gaps (allows window to be larger than target without penalty)
-    aligner.target_end_gap_score = 0.0
+    aligner.match_score = 5
+    aligner.mismatch_score = -4
+    aligner.open_gap_score = -4
+    aligner.extend_gap_score = -4
+    aligner.query_end_gap_score = (
+        0.0  # Free overhangs for Query (allow query to fit inside window)
+    )
+    aligner.target_end_gap_score = (
+        0.0  # Free overhangs for Target (window) just in case
+    )
 
     candidates = []
 
@@ -342,57 +340,67 @@ def alignSequences(
         alignments = aligner.align(query_seq, subject_seq)
         hits = []
         for aln in alignments:
-            # Score calculation
-            score = aln.score
-            lev_distance = -1 * score  # Convert negative score to positive distance
+            print(aln)
+            # aln[0] is the aligned query (Target Site)
+            # aln[1] is the aligned target (Window)
+            seqA_full = str(aln[0])
+            seqB_full = str(aln[1])
+
+            # Identify the core alignment by trimming free end gaps from SeqA
+            # We look for the first and last non-gap character in seqA (the Query)
+            match = re.search(r"[^-].*[^-]", seqA_full)
+            if not match:
+                continue  # Query was aligned as all gaps? (Shouldn't happen with match>0)
+
+            start_idx = match.start()
+            end_idx = match.end()
+
+            # Slice to the core region (removing padding gaps)
+            coreA = seqA_full[start_idx:end_idx]
+            coreB = seqB_full[start_idx:end_idx]
+
+            # Calculate Levenshtein Distance on the Core Alignment
+            subs = 0
+            ins = coreB.count("-")  # Gaps in Window (Insertion in Target)
+            dels = coreA.count("-")  # Gaps in Target (Deletion in Target)
+
+            for a, b in zip(coreA, coreB):
+                if a != "-" and b != "-" and a != b:
+                    subs += 1
+
+            total_bulges = ins + dels
+            lev_distance = subs + total_bulges
 
             if lev_distance > max_score:
                 continue
 
-            # Get aligned sequences as strings (with '-' for gaps)
-            # aln[0] is Query (Target), aln[1] is Target (Window)
-            seqA = str(aln[0])
-            seqB = str(aln[1])
-
-            # Calculate Bulges (Indels)
-            # A '-' in seqA (Target) is a deletion in target / insertion in window
-            # A '-' in seqB (Window) is an insertion in target / deletion in window (bulge)
-            # Total bulge events is sum of gap characters in aligned strings
-            del_count = seqA.count("-")
-            ins_count = seqB.count("-")
-            total_bulges = del_count + ins_count
-
             if total_bulges > max_bulges:
                 continue
 
-            # Calculate Substitutions explicitly (mismatches excluding gaps)
-            subs = 0
-            for a, b in zip(seqA, seqB):
-                if a != "-" and b != "-" and a != b:
-                    subs += 1
-
             # Determine start/end in Window (Subject)
-            # aln.aligned[1] returns a list of (start, end) tuples for the target (window)
-            # We take the min and max to encompass the full aligned region
+            # aln.aligned[1] returns a list of (start, end) segments in the Subject
             if aln.aligned and aln.aligned[1]:
-                window_indices = aln.aligned[1]
-                start = window_indices[0][0]
-                end = window_indices[-1][1]
+                # Min start and Max end of the aligned segments covers the span
+                start = aln.aligned[1][0][0]
+                end = aln.aligned[1][-1][1]
             else:
-                # Fallback if weirdly empty, though shouldn't happen with valid score
                 start, end = 0, 0
+
+            # seqB (window) in the output should be the raw sequence from the window
+            # corresponding to the alignment, OR the gapped alignment string?
+            # Conventionally, we output the aligned string (coreB).
 
             hits.append(
                 {
-                    "seqA": seqA,  # Aligned Target
-                    "seqB": seqB,  # Aligned Window (Off-target site)
+                    "seqA": coreA,  # Aligned Target (trimmed)
+                    "seqB": coreB,  # Aligned Window (trimmed)
                     "score": int(lev_distance),
                     "start": start,
                     "end": end,
                     "strand": strand,
                     "subs": subs,
-                    "ins": ins_count,
-                    "del": del_count,
+                    "ins": ins,
+                    "del": dels,
                     "bulges": total_bulges,
                 }
             )
@@ -1018,6 +1026,16 @@ def main():
 
     args = parser.parse_args()
 
+    # Initialize basic dict to prevent analyze from failing on myDict lookups
+    # Note: Real usage likely populates dsODN primers here, but strictly for the requested task, we just ensure params exist.
+    param_dict = {
+        "PAM": "NGG",
+        "max_bulges": args.max_bulges,
+        "control_primer": args.control_primer,
+        "mapq_threshold": 0,  # Default safe value
+        "save_pickle": False,
+    }
+
     annotations = {
         "Description": "test description",
         "Targetsite": "dummy targetsite",
@@ -1031,6 +1049,7 @@ def main():
         args.window,
         args.max_score,
         args.control_primer,
+        myDict=param_dict,
     )
 
 
