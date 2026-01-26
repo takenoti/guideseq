@@ -19,8 +19,8 @@ import logging
 from Levenshtein import distance
 import pandas as pd
 import dill
-from Bio.Align import PairwiseAligner
 import sys
+from Bio.Align import PairwiseAligner
 
 logger = logging.getLogger("root")
 
@@ -378,17 +378,16 @@ def alignSequences(
                 continue
 
             # Determine start/end in Window (Subject)
-            # aln.aligned[1] returns a list of (start, end) segments in the Subject
-            if aln.aligned and len(aln.aligned[1]) > 0:
-                # Min start and Max end of the aligned segments covers the span
-                start = aln.aligned[1][0][0]
-                end = aln.aligned[1][-1][1]
-            else:
-                start, end = 0, 0
-
-            # seqB (window) in the output should be the raw sequence from the window
-            # corresponding to the alignment, OR the gapped alignment string?
-            # Conventionally, we output the aligned string (coreB).
+            # aln.aligned is a NumPy array of shape (2, N, 2)
+            # We check the length of the second dimension to ensure indices exist.
+            start, end = 0, 0
+            try:
+                # Direct check on array length
+                if len(aln.aligned[1]) > 0:
+                    start = aln.aligned[1][0][0]
+                    end = aln.aligned[1][-1][1]
+            except Exception:
+                pass
 
             hits.append(
                 {
