@@ -321,10 +321,10 @@ def alignSequences(
     # Configure PairwiseAligner for Finding Best Anchor (High scores preferred)
     aligner = PairwiseAligner()
     aligner.mode = "global"
-    aligner.match_score = 5
-    aligner.mismatch_score = -4
-    aligner.open_gap_score = -4
-    aligner.extend_gap_score = -4
+    aligner.match_score = 1
+    aligner.mismatch_score = -1
+    aligner.open_gap_score = -2
+    aligner.extend_gap_score = -2
     aligner.query_end_gap_score = (
         0.0  # Free overhangs for Query (allow query to fit inside window)
     )
@@ -340,7 +340,6 @@ def alignSequences(
         alignments = aligner.align(query_seq, subject_seq)
         hits = []
         for aln in alignments:
-            print(aln)
             # aln[0] is the aligned query (Target Site)
             # aln[1] is the aligned target (Window)
             seqA_full = str(aln[0])
