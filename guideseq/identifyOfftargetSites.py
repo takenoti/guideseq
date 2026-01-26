@@ -3,7 +3,7 @@
 # 2015-10-05 Replaced swalign with regex matching.
 # 2017-05-31 Replaced nwalign with a explicit search of realignments which uses regex.search.
 # 2017-06-03 Output the best offtarget sequences with and/ot without bulges, if any.
-# 2025-05-09 Modified alignment to use BioPython PairwiseAligner with post-alignment Levenshtein calculation.
+# 2025-05-09 Modified alignment to use BioPython PairwiseAligner (Corrected Orientation).
 
 from __future__ import print_function
 
@@ -308,6 +308,7 @@ class chromosomePosition:
 """
 Replaces deprecated Bio.pairwise2 with Bio.Align.PairwiseAligner.
 Uses glocal alignment (Needleman-Wunsch) with post-processing for Levenshtein distance.
+Updated to align Target vs Window and Target vs RC(Window) to maintain strand correctness.
 """
 
 
@@ -316,7 +317,11 @@ def alignSequences(
 ):
     targetsite_sequence = targetsite_sequence.upper()
     window_sequence = window_sequence.upper()
-    rev_target = reverseComplement(targetsite_sequence)
+
+    # Do NOT reverse complement the target.
+    # We look for the Target (5'-3') in the Window (+) and RC-Window (-).
+
+    rc_window_sequence = reverseComplement(window_sequence)
 
     # Configure PairwiseAligner for Finding Best Anchor (High scores preferred)
     aligner = PairwiseAligner()
@@ -326,39 +331,42 @@ def alignSequences(
     aligner.open_gap_score = -2
     aligner.extend_gap_score = -2
     aligner.query_end_gap_score = (
-        0.0  # Free overhangs for Query (allow query to fit inside window)
+        0.0  # This was the bug? NO. If we set this to 0, it allows skipping query.
     )
-    aligner.target_end_gap_score = (
-        0.0  # Free overhangs for Target (window) just in case
-    )
+    # We want Query to NOT be skipped.
+    # In PairwiseAligner 'global', default end_gap_score is same as gap_score.
+    # So we should NOT set aligner.query_end_gap_score to 0.0.
+    del aligner.query_end_gap_score  # Ensure it uses standard gap penalties
+
+    aligner.target_end_gap_score = 0.0  # Free overhangs for Window (Subject)
 
     candidates = []
 
-    def process_alignments(query_seq, subject_seq, strand, original_query_seq):
-        # query_seq = Target Site, subject_seq = Window
-        # Returns an iterable of Alignment objects
+    def process_alignments(query_seq, subject_seq, strand):
+        # query_seq = Target Site, subject_seq = Window (or RC Window)
         alignments = aligner.align(query_seq, subject_seq)
         hits = []
         for aln in alignments:
-            # aln[0] is the aligned query (Target Site)
-            # aln[1] is the aligned target (Window)
+            # aln[0] is aligned Query
+            # aln[1] is aligned Subject
             seqA_full = str(aln[0])
             seqB_full = str(aln[1])
 
-            # Identify the core alignment by trimming free end gaps from SeqA
-            # We look for the first and last non-gap character in seqA (the Query)
+            # Identify the core alignment by trimming free end gaps from SeqA (Query)
+            # Since we enforced global on query (by removing query_end_gap_score=0),
+            # the query should ideally span the whole alignment, but let's be robust.
+
             match = re.search(r"[^-].*[^-]", seqA_full)
             if not match:
-                continue  # Query was aligned as all gaps? (Shouldn't happen with match>0)
+                continue
 
             start_idx = match.start()
             end_idx = match.end()
 
-            # Slice to the core region (removing padding gaps)
             coreA = seqA_full[start_idx:end_idx]
             coreB = seqB_full[start_idx:end_idx]
 
-            # Calculate Levenshtein Distance on the Core Alignment
+            # Calculate Levenshtein Distance
             subs = 0
             ins = coreB.count("-")  # Gaps in Window (Insertion in Target)
             dels = coreA.count("-")  # Gaps in Target (Deletion in Target)
@@ -376,12 +384,10 @@ def alignSequences(
             if total_bulges > max_bulges:
                 continue
 
-            # Determine start/end in Window (Subject)
-            # aln.aligned is a NumPy array of shape (2, N, 2)
-            # We check the length of the second dimension to ensure indices exist.
+            # Determine start/end in Subject
             start, end = 0, 0
             try:
-                # Direct check on array length
+                # aln.aligned[1] is array of indices in subject
                 if len(aln.aligned[1]) > 0:
                     start = aln.aligned[1][0][0]
                     end = aln.aligned[1][-1][1]
@@ -390,8 +396,8 @@ def alignSequences(
 
             hits.append(
                 {
-                    "seqA": coreA,  # Aligned Target (trimmed)
-                    "seqB": coreB,  # Aligned Window (trimmed)
+                    "seqA": coreA,  # Aligned Target
+                    "seqB": coreB,  # Aligned Window segment (This will be RC if strand is -)
                     "score": int(lev_distance),
                     "start": start,
                     "end": end,
@@ -404,16 +410,10 @@ def alignSequences(
             )
         return hits
 
-    candidates.extend(
-        process_alignments(
-            targetsite_sequence, window_sequence, "+", targetsite_sequence
-        )
-    )
-    candidates.extend(process_alignments(rev_target, window_sequence, "-", rev_target))
+    candidates.extend(process_alignments(targetsite_sequence, window_sequence, "+"))
+    candidates.extend(process_alignments(targetsite_sequence, rc_window_sequence, "-"))
 
     # Initialize return structure
-    # [0:offtarget_no_bulge, 1:mismatches, 2:strand_m, 3:start_m, 4:end_m,
-    #  5:bulged_seq, 6:length, 7:score(lev), 8:sub, 9:ins, 10:del, 11:strand_b, 12:start_b, 13:end_b, 14:realigned_target]
     ret = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "none"]
 
     if not candidates:
@@ -422,26 +422,23 @@ def alignSequences(
     # Sort candidates: Primary key = Score (Low is better), Secondary = Bulges (Low is better)
     best_hit = sorted(candidates, key=lambda x: (x["score"], x["bulges"]))[0]
 
-    # Map best hit to output format
     if best_hit["bulges"] == 0:
-        # Fill Mismatch-only columns
         ret[0] = best_hit["seqB"]
-        ret[1] = best_hit["subs"]  # mismatches
+        ret[1] = best_hit["subs"]
         ret[2] = best_hit["strand"]
         ret[3] = best_hit["start"]
         ret[4] = best_hit["end"]
     else:
-        # Fill Bulged columns
         ret[5] = best_hit["seqB"]
         ret[6] = len(best_hit["seqB"])
-        ret[7] = best_hit["score"]  # Levenshtein Distance
+        ret[7] = best_hit["score"]
         ret[8] = best_hit["subs"]
         ret[9] = best_hit["ins"]
         ret[10] = best_hit["del"]
         ret[11] = best_hit["strand"]
         ret[12] = best_hit["start"]
         ret[13] = best_hit["end"]
-        ret[14] = best_hit["seqA"]  # Realigned target
+        ret[14] = best_hit["seqA"]
 
     return ret
 
@@ -984,6 +981,8 @@ def processLine(line):
     filename = fields[0]
     rest = fields[1:]
     return filename, rest
+
+
 
 
 def reverseComplement(sequence):
