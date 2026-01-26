@@ -3,7 +3,7 @@
 # 2015-10-05 Replaced swalign with regex matching.
 # 2017-05-31 Replaced nwalign with a explicit search of realignments which uses regex.search.
 # 2017-06-03 Output the best offtarget sequences with and/ot without bulges, if any.
-# 2025-05-09 Modified alignment to use BioPython PairwiseAligner (Corrected Orientation).
+# 2025-05-09 Modified alignment to use BioPython PairwiseAligner with precise coordinate mapping.
 
 from __future__ import print_function
 
@@ -330,10 +330,12 @@ def alignSequences(
     aligner.mismatch_score = -1
     aligner.open_gap_score = -2
     aligner.extend_gap_score = -2
-    aligner.query_end_gap_score = (
-        0.0  # This was the bug? NO. If we set this to 0, it allows skipping query.
-    )
-    aligner.target_end_gap_score = 0.0  # Free overhangs for Window (Subject)
+    # Ensure Global alignment on Query (no skipping allowed)
+    # Note: query_end_gap_score defaults to same as gap_score in global mode,
+    # which implies penalty. This is correct.
+
+    # Free overhangs for Window (Subject) to allow local matching within window
+    aligner.target_end_gap_score = 0.0
 
     candidates = []
 
@@ -348,9 +350,6 @@ def alignSequences(
             seqB_full = str(aln[1])
 
             # Identify the core alignment by trimming free end gaps from SeqA (Query)
-            # Since we enforced global on query (by removing query_end_gap_score=0),
-            # the query should ideally span the whole alignment, but let's be robust.
-
             match = re.search(r"[^-].*[^-]", seqA_full)
             if not match:
                 continue
@@ -358,13 +357,14 @@ def alignSequences(
             start_idx = match.start()
             end_idx = match.end()
 
+            # The 'core' is defined by where the Query aligns.
             coreA = seqA_full[start_idx:end_idx]
             coreB = seqB_full[start_idx:end_idx]
 
             # Calculate Levenshtein Distance
             subs = 0
-            ins = coreB.count("-")  # Gaps in Window (Insertion in Target)
-            dels = coreA.count("-")  # Gaps in Target (Deletion in Target)
+            ins = coreB.count("-")  # Gaps in Window (Deletion in Genome/RNA Bulge)
+            dels = coreA.count("-")  # Gaps in Target (Insertion in Genome/DNA Bulge)
 
             for a, b in zip(coreA, coreB):
                 if a != "-" and b != "-" and a != b:
@@ -379,20 +379,24 @@ def alignSequences(
             if total_bulges > max_bulges:
                 continue
 
-            # Determine start/end in Subject
-            start, end = 0, 0
-            try:
-                # aln.aligned[1] is array of indices in subject
-                if len(aln.aligned[1]) > 0:
-                    start = aln.aligned[1][0][0]
-                    end = aln.aligned[1][-1][1]
-            except Exception:
-                pass
+            # Determine start/end in Subject based on the string indices.
+            # We map start_idx and end_idx (from the full alignment string)
+            # back to the indices of the unaligned Subject string.
+            # This is done by counting non-gap characters in seqB up to those points.
+
+            # Count bases in seqB before the start of the core match
+            start = len(seqB_full[:start_idx].replace("-", ""))
+
+            # Count bases in seqB before the end of the core match
+            end = len(seqB_full[:end_idx].replace("-", ""))
+
+            # Note: end - start will exactly equal the number of bases in coreB (excluding gaps).
+            # If coreB contains gaps (RNA bulge), the genomic length will be smaller than Target Length.
 
             hits.append(
                 {
                     "seqA": coreA,  # Aligned Target
-                    "seqB": coreB,  # Aligned Window segment (This will be RC if strand is -)
+                    "seqB": coreB,  # Aligned Window segment (RC if strand -)
                     "score": int(lev_distance),
                     "start": start,
                     "end": end,
