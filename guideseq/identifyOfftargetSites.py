@@ -331,9 +331,6 @@ def alignSequences(
     aligner.open_gap_score = -1
     aligner.extend_gap_score = -1
 
-    # Penalize query end gaps (default for global, but being explicit)
-    aligner.query_end_gap_score = None  # None uses open/extend scores
-
     # Free target end gaps (allows window to be larger than target without penalty)
     aligner.target_end_gap_score = 0.0
 
