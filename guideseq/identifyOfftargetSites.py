@@ -333,11 +333,6 @@ def alignSequences(
     aligner.query_end_gap_score = (
         0.0  # This was the bug? NO. If we set this to 0, it allows skipping query.
     )
-    # We want Query to NOT be skipped.
-    # In PairwiseAligner 'global', default end_gap_score is same as gap_score.
-    # So we should NOT set aligner.query_end_gap_score to 0.0.
-    del aligner.query_end_gap_score  # Ensure it uses standard gap penalties
-
     aligner.target_end_gap_score = 0.0  # Free overhangs for Window (Subject)
 
     candidates = []
