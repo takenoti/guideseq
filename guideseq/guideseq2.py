@@ -327,14 +327,14 @@ class GuideSeq:
 					self.identified[sample] = os.path.join(self.parameters['analysis_folder'], 'identified', sample + '_identifiedOfftargets.txt')
 
 					identifyOfftargetSites.analyze(self.samples[sample]['aligned'], self.parameters['reference_genome'], self.identified[sample], annotations,
-												   self.parameters['window_size'], self.parameters['max_score'], self.parameters['control_primer'],self.parameters)
+												   self.parameters['window_size'], self.parameters['max_score'], self.parameters['max_bulges'], self.parameters['control_primer'],self.parameters)
 
 					sample = "Control_"+sample
 
 					self.identified[sample] = os.path.join(self.parameters['analysis_folder'], 'identified', sample + '_identifiedOfftargets.txt')
 
 					identifyOfftargetSites.analyze(self.samples[sample.replace("Control_","")]['controlaligned'], self.parameters['reference_genome'], self.identified[sample], annotations,
-												   self.parameters['window_size'], self.parameters['max_score'], self.parameters['control_primer'],self.parameters)
+												   self.parameters['window_size'], self.parameters['max_score'], self.parameters['max_bulges'], self.parameters['control_primer'],self.parameters)
 				except:
 					logger.error(f'Failed for sample {sample}')   
 					logger.error(traceback.format_exc())

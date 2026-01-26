@@ -464,6 +464,7 @@ def analyze(
     annotations,
     windowsize,
     max_score,
+    max_bulges,
     control_primer,
     myDict=None,
 ):
@@ -482,13 +483,6 @@ def analyze(
     total_dsODN = 0
     control_primer_count_dict = {}  # for debug purposes
     total_dsODN_count_dict = {}  # for debug purposes
-
-    # Extract params from myDict safely
-    pam_seq = "NGG"
-    max_bulges = 2
-    if myDict:
-        pam_seq = myDict.get("PAM", "NGG")
-        max_bulges = myDict.get("max_bulges", 2)
 
     for line in file:
         fields = line.split("\t")
@@ -681,7 +675,11 @@ def analyze(
                     bulged_end,
                     realigned_target_sequence,
                 ) = alignSequences(
-                    target_sequence, window_sequence, max_score, pam_seq, max_bulges
+                    target_sequence,
+                    window_sequence,
+                    max_score,
+                    myDict["PAM"],
+                    max_bulges,
                 )
 
                 # print (realigned_target_sequence,target_sequence, window_sequence, max_score)
@@ -978,8 +976,6 @@ def processLine(line):
     return filename, rest
 
 
-
-
 def reverseComplement(sequence):
     if sys.version_info[0] < 3:
         tab = string.maketrans("ACGTacgt", "TGCATGCA")
@@ -1018,16 +1014,6 @@ def main():
 
     args = parser.parse_args()
 
-    # Initialize basic dict to prevent analyze from failing on myDict lookups
-    # Note: Real usage likely populates dsODN primers here, but strictly for the requested task, we just ensure params exist.
-    param_dict = {
-        "PAM": "NGG",
-        "max_bulges": args.max_bulges,
-        "control_primer": args.control_primer,
-        "mapq_threshold": 0,  # Default safe value
-        "save_pickle": False,
-    }
-
     annotations = {
         "Description": "test description",
         "Targetsite": "dummy targetsite",
@@ -1040,8 +1026,8 @@ def main():
         annotations,
         args.window,
         args.max_score,
+        args.max_bulges,
         args.control_primer,
-        myDict=param_dict,
     )
 
 
