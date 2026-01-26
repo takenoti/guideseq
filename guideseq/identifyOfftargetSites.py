@@ -379,7 +379,7 @@ def alignSequences(
 
             # Determine start/end in Window (Subject)
             # aln.aligned[1] returns a list of (start, end) segments in the Subject
-            if aln.aligned and aln.aligned[1]:
+            if aln.aligned and len(aln.aligned[1]) > 0:
                 # Min start and Max end of the aligned segments covers the span
                 start = aln.aligned[1][0][0]
                 end = aln.aligned[1][-1][1]
