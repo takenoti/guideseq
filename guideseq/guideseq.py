@@ -478,6 +478,7 @@ class GuideSeq:
                         self.parameters["max_score"],
                         self.parameters["max_bulges"],
                         self.parameters["control_primer"],
+                        self.parameters["samtools"],
                         self.parameters,
                     )
 
@@ -498,8 +499,8 @@ class GuideSeq:
                         self.parameters["max_score"],
                         self.parameters["max_bulges"],
                         self.parameters["control_primer"],
+                        self.parameters["samtools"],
                         self.parameters,
-                        samtools=self.parameters["samtools"],
                     )
                 except:
                     logger.error(f"Failed for sample {sample}")
