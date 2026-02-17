@@ -112,11 +112,29 @@ class chromosomePosition:
         self.chromosome_barcode_dict[chromosome][position][strand + "_total"] += count
 
     def getSequence(self, genome, chromosome, start, end, strand="+"):
+        start = int(start)
+        end = int(end)
+
+        # Clamp to [0, chrom_len]
+        chrom_len = len(self.genome[chromosome])
+        if start < 0:
+            start = 0
+        if end < 0:
+            end = 0
+        if start > chrom_len:
+            start = chrom_len
+        if end > chrom_len:
+            end = chrom_len
+
+        # If invalid/empty interval, return empty string (or raise)
+        if end <= start:
+            return ""
+
         if strand == "+":
-            seq = self.genome[chromosome][int(start) : int(end)]
-        elif strand == "-":
-            seq = self.genome[chromosome][int(start) : int(end)].reverse.complement
-        return seq
+            seq = self.genome[chromosome][start:end]
+        else:
+            seq = self.genome[chromosome][start:end].reverse.complement
+        return str(seq)
 
     # Generates a summary of the barcodes by position
     def SummarizeBarcodePositions(self):
@@ -666,7 +684,7 @@ def analyze(
             )
 
             non_bulged_target_start_absolute, bulged_target_start_absolute = "", ""
-            if target_sequence:
+            if target_sequence and window_sequence:
                 # Updated to pass max_bulges
                 (
                     offtarget_sequence_no_bulge,
