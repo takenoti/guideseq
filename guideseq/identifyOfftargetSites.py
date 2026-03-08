@@ -573,7 +573,8 @@ def analyze(
                 else:
                     total_dsODN_count_dict[primer] = 1
                 # print (primer)
-
+                read_position = None
+                strand = None
                 if int(template_length) < 0:  # Reverse read
                     read_position = (
                         int(position_of_mate) + abs(int(template_length)) - 1
@@ -588,6 +589,8 @@ def analyze(
                     chromosome_position.addPositionBarcode(
                         chromosome, read_position, strand, barcode, primer, count
                     )
+                if read_position is None:
+                    continue
                 # if primer == "nomatch":
                 print(
                     full_read_name,
