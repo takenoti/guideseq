@@ -91,11 +91,11 @@ def demultiplex(
             outfiles_r2[sample_id] = open(
                 os.path.join(out_dir, "%s.r2.fastq" % sample_id), "w"
             )
-        name, barcode = r1[0].strip().split()
+        name = r1[0].strip().split()[0]
         umi = i2[1].strip()[-10:]
         # umi = barcode.split("+")[-1][-10:]
         r1[0] = name + "_" + umi + "\n"
-        name, barcode = r2[0].strip().split()
+        name = r2[0].strip().split()[0]
         # umi = barcode.split("+")[-1][-10:]
         r2[0] = name + "_" + umi + "\n"
         for line in r1:
